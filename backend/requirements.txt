@@ -1,0 +1,8 @@
+asgiref==3.8.1
+Django==5.0.12
+django-unfold==0.50.0
+psycopg2-binary==2.9.10
+sqlparse==0.5.3
+tzdata==2025.1
+django-tastypie==0.15.0
+django-redis==5.4.0
