@@ -3,6 +3,7 @@ import logging
 from aiogram.types import Message
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
+from functions import orders, post_db
 import requests
 import time
 import json
@@ -10,9 +11,11 @@ from os import getenv
 from dotenv import load_dotenv
 from loguru import logger
 
+orders_url = f'{getenv("API")}/api/v1/orders/?status=new'
+get_status = f'{getenv("API")}/api/v1/orders/?status=accepted'
 
-orders_url = f'https://private-api-amk6.onrender.com/api/v1/orders/?status=new'
-get_status = f"https://private-api-amk6.onrender.com/api/v1/orders/?status=accepted"
+headers = {"Authorization": f"ApiKey {getenv('API_KEY')}"}
+
 router = Router()
 
 load_dotenv('.env')
@@ -75,9 +78,8 @@ async def start_handler(msg: Message):
 
 @logger.catch
 async def status_orders(data_id, data_status):
-    headers = {"Authorization": "ApiKey oooprya:qwe123"}
     order_patch = {"status": f"{data_status}"}
-    x = requests.patch(f"https://private-api-amk6.onrender.com/api/v1/orders/{data_id}/",
+    x = requests.patch(f'{getenv("API")}/api/v1/orders/{data_id}/',
                        json=order_patch, headers=headers)
     logger.debug(x.status_code)
     return order_patch
@@ -111,7 +113,7 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
         await callback.bot.edit_message_text(chat_id=callback.from_user.id, text=f"✅ Виконано замовлення №{order_id.zfill(4)}", message_id=callback.message.message_id)
         logger.debug(f'{order_id} {callback.from_user}')
 
-all_orders ="<a href='https://private-api-amk6.onrender.com/admin/currency/orders/'>Все заказы</a>"
+all_orders =f"<a href='{getenv("API")}/admin/currency/orders/'>Все заказы</a>"
 
 @logger.catch
 def accept_order(order_id):
@@ -150,12 +152,18 @@ async def ger_accepted_(message: types.Message):
         await message.answer(text='Немає Прийнятих замовлень')
 
 
-@router.message(F.text == "Обмін валют Privat")
+@router.message(F.text == "on_order_send_message")
 async def echo_handler(message: types.Message):
-    new_currency = "💰💰Обмін валют Privat💰💰\n\nКурс від 500$/€/£/₣\n🇺🇸/🇺🇦 USD: 41.65/41.75\n🇪🇺/🇺🇦 EUR: 43.85/44.00\n🇺🇸/🇪🇺 $/€: 1.051/1.054\n\n🇬🇧/🇺🇦 GBP: 52.35/52.80\n🇨🇭/🇺🇦 CHF: 46.70/47.10\n🇵🇱/🇺🇦 PLN: 10.45/10.55\n🇷🇴/🇺🇦 RON: 8.55 / 8.85\n🇲🇩/🇺🇦 MLD: 2.20 / 2.30\n🇨🇦/🇺🇦 CAD: 28.75/29.40\n🇳🇴/🇺🇦 NOK: 3.15 / 3.40\n🥇 /🇺🇸 GOLD 96.50/100.50 $/g\n\nНа купюри номіналом 1, 2, 5, 10, 20, 50 $ оптовий курс не діє\n\nТакож працюємо з iншими валютами:\nAUD, TRY, CZK, ILS, CNY, HUF,\n\n🇦🇺  🇹🇷   🇨🇿   🇮🇱  🇨🇳    🇭🇺   та інші\nПриймаємо зношенi купюри з min %\n\nМенеджер\n💬💬0967228090 💬 @PrivatObmenOd\nІндивідуальні пропозиції,  якість  обслуговування :\nКерівник\n💬💬0634765088 💬 @VitalikPrivat"
     logger.info(message.text)
-    await message.bot.send_message(chat_id=chat_id_name, text=f"{message.text}")
-    await message.bot.send_message(chat_id=chat_id_name, text=f"{new_currency}")
+    # await message.bot.send_message(chat_id=chat_id_name, text=f"{message.text}")
+    await orders.order_send_message()
+
+
+@router.message(F.text == "on_post_db")
+async def echo_handler(message: types.Message):
+    logger.info(message.text)
+    await post_db.post_db()
+
 
 
 @logger.catch
