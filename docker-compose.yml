@@ -1,32 +1,35 @@
+networks:
+  dev:
+
 services:
-  # nginx:
-  #   build:
-  #     context: ./nginx_dev
-  #   volumes:
-  #     - static_volume:/static
-  #     - ./nginx_dev/nginx.conf:/etc/nginx/conf.d/default.conf
-  #     - ./nginx_dev/sitemap.xml:/etc/nginx/html/sitemap.xml  # Добавляем sitemap.xml
-  #   # ports:
-  #   #   - "80:80"
-  #   #   - "443:443"
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - dev
+  nginx:
+    build: ./nginx
+    image: v1.01
+    volumes:
+      - static_volume:/static
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt:/etc/letsencrypt  # Пробрасываем SSL-сертификаты внутрь контейнера
+      - ./nginx/robots.txt:/etc/nginx/robots.txt  # Пробрасываем robots.txt внутрь контейнера
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    networks:
+      - dev
 
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
-    command: python manage.py runserver 0.0.0.0:8000
+      dockerfile: Dockerfile.prod
+    container_name: api
+    image: api_v1.001
     volumes:
       - static_volume:/app/static
     ports:
-      - 8000:8000
-    expose:
-      - 8000
+      - "8000:8000"
     env_file:
-      - ./.env.dev
+      - ./.env.prod
     depends_on:
       - db
     networks:
@@ -35,12 +38,11 @@ services:
     image: postgres:16
     restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata16:/var/lib/postgresql/data
     environment:
-      - DB_HOST=localhost
-      - POSTGRES_DB=django_db
-      - POSTGRES_USER=django_user
-      - POSTGRES_PASSWORD=django_password
+      POSTGRES_DB: django_db
+      POSTGRES_USER: django_user
+      POSTGRES_PASSWORD: django_password
     ports:
       - 5432:5432
     networks:
@@ -48,30 +50,31 @@ services:
 
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    image: next_v1.0004
+    build: ./frontend
+    container_name: next_v1
+    image: next_v1.0005
     ports:
       - 4000:3000
     environment:
       - TZ=Europe/Kiev
       - NEXT_API_KEY=oooprya:befd2bc28866e973e7ce
       - NEXT_API_URL=https://exprivat.com.ua/api/v1
+    depends_on:
+      - nginx
+    networks:
+      - dev
 
   telegram_bot:
-    image: bot_v1.0005
+    image: bot_v1.0003
     build: ./bot
     container_name: telegram_bot
     volumes:
       - ./bot:/app
     depends_on:
-      - db
       - backend
+      - db
     env_file:
-      - ./.env.dev
-    networks:
-      - dev
+      - ./.env.prod
 
   # admin:
   #   image: adminer
@@ -94,9 +97,7 @@ services:
   #     networks:
   #       - dev
 
-networks:
-  dev:
 
 volumes:
   static_volume:
-  postgres_data:
+  pgdata16:

@@ -1,14 +1,12 @@
 from aiogram import types, F, Router
-import logging
 from aiogram.types import Message
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from aiogram.filters import Command
-from functions import orders, post_db
+from functions.orders import order_send_message
+from functions.post_db import post_to_db
+from db_main import Database
 import requests
-import time
-import json
 from os import getenv
-from dotenv import load_dotenv
 from loguru import logger
 
 orders_url = f'{getenv("API")}/api/v1/orders/?status=new'
@@ -18,62 +16,80 @@ headers = {"Authorization": f"ApiKey {getenv('API_KEY')}"}
 
 router = Router()
 
-load_dotenv('.env')
+
 
 # getenv("ULIA") Head Admin PrivatObmenOd
 chat_id_name = getenv("Admin")
 
 
+db = Database()
+
 @router.message(Command("start"))
 async def start_handler(msg: Message):
-    # res = requests.get(orders_url)
-    # data = res.json()
-    # orders = data.get('objects')
 
-    time_local = time.localtime()
-    time_user = time.strftime('%Y %d %m %H:%M:%S', time_local)
-    with open(f'users.json') as users_f:
-        users_json = json.load(users_f)
-    users_f.close()
+    try:
+        # Получаем информацию о пользователе
+        chat_id = msg.from_user.id
+        username = msg.from_user.username or "Без username"
 
-    user_id = msg.from_user.id
-    there_id = False
+        # Проверяем существование пользователя
+        exists, user_data = db.user_exists(chat_id)
 
-    for useri in range(len(users_json)):
-        if user_id == users_json[useri]['id']:
-            print(f'{user_id} = {users_json[useri]["id"]}')
-            there_id = True
-    print(there_id)
+        if exists:
+            if user_data[3] == "client":
+                await msg.answer(text=f"✨ Добро пожаловать!\n\n {msg.from_user.first_name} Вам доступны все функции для клиентов. \n\n",
+                                 reply_markup=get_armor(chat_id))
+                return
+            if user_data[3] == "moderator":
+                await msg.answer(text=f"Добро пожаловать {msg.from_user.first_name}!\n\n",
+                                 reply_markup=api_res())
+                return
+            logger.debug("Вы уже зарегистрированы в системе.")
+            return
 
-    # если в users.json нет такого user.id добавляем его в users.json
-    if there_id == False:
-        time_local = time.localtime()
-        time_user = time.strftime('%Y %d %m %H:%M:%S', time_local)
-        time_string = time.strftime('%d_%m_%H_', time_local)
-        tM = time.strftime('%M', time_local)
+        # Добавляем пользователя с ролью по умолчанию
+        result = db.add_user(
+            chat_id=chat_id,
+            chat_id_name=username,
+            role="client",  # Роль по умолчанию
+            clients_telephone=""
+        )
 
-        if int(tM[-1]) > 0:
-            res_tM = tM[-2] + tM[-1].replace(tM[-1], '0')
+        if result:
+            logger.debug("Вы успешно зарегистрированы!")
+            await msg.answer(text='Щоб побачити свою бронь Натисніть кнопку 📲 Надіслати свій контакт кнопка в меню 👇 👇 👇', 
+                             reply_markup=get_contact())
+        else:
+            logger.error("Не удалось зарегистрировать пользователя.")
+    except Exception as e:
+        logger.error(f"Ошибка в обработчике /start: {e}")
+        await msg.answer("Произошла ошибка при регистрации.")
 
-        user = dict(id=msg.from_user.id, first_name=msg.from_user.first_name,
-                    last_name=msg.from_user.last_name, username=msg.from_user.username, time=time_user)
-        users_json.append(user)
-        print(f'{user} : {time_string}{tM}')
-        with open(f'users.json', 'w') as f:
-            json.dump(users_json, f, indent=4)
 
+@logger.catch
+def get_contact():
+    kb = [
+        [
+            KeyboardButton(text='📲 Отправить свой контакт', request_contact=True)
+        ],
+    ]
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=kb,
+        resize_keyboard=True, one_time_keyboard=True,
+        input_field_placeholder="нажмите кнопку 📲 Отправить свой контакт"
+    )
+    return keyboard
 
-    # if orders:
-    #     for order in orders:
-    #         get_id = order.get('id')
-    #         send_order = f"🛎 <b>Нове замовлення</b> 10000{order.get('id')}\n\n🏦{order.get('address_exchanger')}\n{order.get('currency_name')} \n🫳{order.get('buy_or_sell')} по {order.get('exchange_rate')} \nCума <b>{order.get('order_sum')}</b>\n\n📲{order.get('сlients_telephone')}"
-    #         logging.info(f"{order.get('id')}")
-    #         await msg.answer(text=send_order,  reply_markup=accept_order(get_id))
+def get_armor(tel: str):
+    buttons = [
+        [
+            InlineKeyboardButton(text="💲 Мої броні",
+                                 callback_data=f"getarmor_{tel}"),
+        ],
 
-    # if user_id == getenv("Admin"):
-    await msg.answer(text=f"Доброго дня, {msg.from_user.first_name}! \n\n{all_orders}", reply_markup=api_res())
-
-    logging.info(f'{msg.from_user.id}')
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
 
 
 @logger.catch
@@ -102,6 +118,21 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
 
         logger.debug(order_id)
 
+    logger.info(callback.from_user)
+    if callback.data == f'getarmor_{callback.data.split("_")[1]}':
+
+        exists, user_data = db.user_exists(callback.data.split("_")[1])
+        if exists:
+            if user_data[3] == "client":
+                logger.debug(user_data)
+                order, order_data = db.get_orders(clients_telephone=user_data[4])
+                logger.debug(user_data[4])
+                logger.debug(order)
+                id = f"{order_data[0]}".zfill(4)
+                send_order = f"🛎 <b>Ваше замовлення</b> {id}\n\n🏦{user_data[4]}\n{user_data[4]} \n🫳{user_data[4]} по {user_data[4]} \nCума <b>{user_data[4]}</b>\n\n"
+                await callback.bot.send_message(chat_id=callback.from_user.id, text=send_order)
+
+
     if callback.data == f"cancel_{order_id}":
         await status_orders(order_id, status)
         await callback.bot.edit_message_text(chat_id=callback.from_user.id, text=f"Відмінити замовлення №{order_id.zfill(4)}", message_id=callback.message.message_id)
@@ -113,7 +144,7 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
         await callback.bot.edit_message_text(chat_id=callback.from_user.id, text=f"✅ Виконано замовлення №{order_id.zfill(4)}", message_id=callback.message.message_id)
         logger.debug(f'{order_id} {callback.from_user}')
 
-all_orders =f"<a href='{getenv("API")}/admin/currency/orders/'>Все заказы</a>"
+all_orders =f"<a href='{getenv('API')}/admin/currency/orders/'>Все заказы</a>"
 
 @logger.catch
 def accept_order(order_id):
@@ -156,13 +187,24 @@ async def ger_accepted_(message: types.Message):
 async def echo_handler(message: types.Message):
     logger.info(message.text)
     # await message.bot.send_message(chat_id=chat_id_name, text=f"{message.text}")
-    await orders.order_send_message()
+    await order_send_message()
 
 
 @router.message(F.text == "on_post_db")
 async def echo_handler(message: types.Message):
     logger.info(message.text)
-    await post_db.post_db()
+    await post_to_db()
+
+
+@router.message()
+async def echo_handler(msg: types.Message):
+
+    if msg.contact:
+            db.update_phone_user(chat_id=msg.from_user.id, clients_telephone=msg.contact.phone_number)
+            await msg.answer(f"Дякуємо за ваш номер \n📲{msg.contact.phone_number}",
+                                 reply_markup=ReplyKeyboardRemove())
+            await msg.answer(text=f"✨ Ласкаво просимо!\n\n {msg.from_user.first_name} Для перевірки броні\nнатисніть кнопку 👇🏻👇🏻👇🏻",
+                                 reply_markup=get_armor(msg.contact.phone_number))
 
 
 

@@ -1,22 +1,18 @@
 #!/bin/bash
 import asyncio
 import requests
-from dotenv import load_dotenv
 from aiogram.enums import ParseMode
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
-import time
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.client.bot import DefaultBotProperties
+from functions.all_fun import status_orders
 from os import getenv
-from datetime import timedelta
 from aiogram import Bot
 from loguru import logger
 
 
-orders_url = f'https://private-api-amk6.onrender.com/api/v1/orders/?status=new'
-status_accepted = f'https://private-api-amk6.onrender.com/api/v1/orders/?status=accepted'
+orders_url = f'{getenv("API")}/api/v1/orders/?status=new'
+status_accepted = f'{getenv("API")}/api/v1/orders/?status=accepted'
 
-
-load_dotenv('bot/.env')
 
 logger.add("cron.log", colorize=True,
            format="{time:YYYY-MM-DD HH:mm:ss} {name} {line} {level} {message} ", level="DEBUG", rotation="500 KB", compression="zip")
@@ -42,15 +38,6 @@ def accept_order(order_id):
 
 
 @logger.catch
-async def status_orders(data_id, data_status):
-    headers = {"Authorization": "ApiKey oooprya:qwe123"}
-    order_patch = {"status": f"{data_status}"}
-    x = requests.patch(f"https://private-api-amk6.onrender.com/api/v1/orders/{data_id}/",
-                       json=order_patch, headers=headers)
-    logger.debug(x.status_code)
-    return order_patch
-
-@logger.catch
 async def order_send_message():
     """ Получаем новый заказ из сайта по API и отправляю Менеджеру """
     bot = Bot(token=getenv("TOKEN"), default=DefaultBotProperties(
@@ -68,26 +55,15 @@ async def order_send_message():
                 # logger.debug(await bot.get_me())
 
                 meg = await bot.send_message(
-                    chat_id=getenv("Admin"),
+                    chat_id=getenv("PrivatObmenOd"),
                     # chat_id=getenv("ULIA"), PrivatObmenOd Admin Head
                     text=send_order,
                     reply_markup=accept_order(order.get('id'))
                 )
                 await status_orders(order.get('id'), "ordersent")
-                logger.debug(meg.text)
+                logger.debug(f'{meg.text}')
             except:
                 logger.debug(f"замовлення нема")
 
-                # await bot.send_message(
-                #     chat_id=getenv("PrivatObmenOd"),
-                #     text=send_order,
-                #     reply_markup=accept_order(order.get('id'))
-                # )
         # Ждем 1 минуту
-        time.sleep(60)
-
-
-
-
-if __name__ == '__main__':
-    asyncio.run(order_send_message())
+        await asyncio.sleep(60)
