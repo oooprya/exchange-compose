@@ -1,12 +1,15 @@
 from aiogram import types, F, Router
+from decimal import Decimal
 from aiogram.types import Message
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardRemove
 from aiogram.filters import Command
-from functions.orders import order_send_message
-from functions.post_db import post_to_db
-from db_main import Database
+from functions.all_fun import set_correction
+from functions import orders, post_db
+from allkeyboard.all_keyboard import get_armor, get_contact, kb_status_order, order_accepted
 import requests
+
 from os import getenv
+from functions.db_main import Database
 from loguru import logger
 
 orders_url = f'{getenv("API")}/api/v1/orders/?status=new'
@@ -16,17 +19,13 @@ headers = {"Authorization": f"ApiKey {getenv('API_KEY')}"}
 
 router = Router()
 
+db = Database()
 
-
-# getenv("ULIA") Head Admin PrivatObmenOd
 chat_id_name = getenv("Admin")
 
 
-db = Database()
-
 @router.message(Command("start"))
 async def start_handler(msg: Message):
-
     try:
         # Получаем информацию о пользователе
         chat_id = msg.from_user.id
@@ -36,13 +35,18 @@ async def start_handler(msg: Message):
         exists, user_data = db.user_exists(chat_id)
 
         if exists:
+            logger.debug(user_data)
             if user_data[3] == "client":
-                await msg.answer(text=f"✨ Добро пожаловать!\n\n {msg.from_user.first_name} Вам доступны все функции для клиентов. \n\n",
+                if user_data[4] == '':
+                    await msg.answer(text='Щоб побачити свою бронь Натисніть кнопку 📲 Надіслати свій контакт кнопка в меню 👇 👇 👇',
+                                    reply_markup=get_contact())
+                    return
+                await msg.answer(text=f"🎉 Ласкаво просимо, {msg.from_user.first_name}!✨\n\nДля перевірки броні\nнатисніть кнопку 👇🏻👇🏻👇🏻",
                                  reply_markup=get_armor(chat_id))
                 return
             if user_data[3] == "moderator":
                 await msg.answer(text=f"Добро пожаловать {msg.from_user.first_name}!\n\n",
-                                 reply_markup=api_res())
+                                 reply_markup=order_accepted())
                 return
             logger.debug("Вы уже зарегистрированы в системе.")
             return
@@ -54,42 +58,15 @@ async def start_handler(msg: Message):
             role="client",  # Роль по умолчанию
             clients_telephone=""
         )
-
         if result:
             logger.debug("Вы успешно зарегистрированы!")
-            await msg.answer(text='Щоб побачити свою бронь Натисніть кнопку 📲 Надіслати свій контакт кнопка в меню 👇 👇 👇', 
+            await msg.answer(text='Щоб побачити свою бронь Натисніть кнопку 📲 Надіслати свій контакт кнопка в меню 👇 👇 👇',
                              reply_markup=get_contact())
         else:
             logger.error("Не удалось зарегистрировать пользователя.")
     except Exception as e:
         logger.error(f"Ошибка в обработчике /start: {e}")
         await msg.answer("Произошла ошибка при регистрации.")
-
-
-@logger.catch
-def get_contact():
-    kb = [
-        [
-            KeyboardButton(text='📲 Отправить свой контакт', request_contact=True)
-        ],
-    ]
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=kb,
-        resize_keyboard=True, one_time_keyboard=True,
-        input_field_placeholder="нажмите кнопку 📲 Отправить свой контакт"
-    )
-    return keyboard
-
-def get_armor(tel: str):
-    buttons = [
-        [
-            InlineKeyboardButton(text="💲 Мої броні",
-                                 callback_data=f"getarmor_{tel}"),
-        ],
-
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    return keyboard
 
 
 @logger.catch
@@ -113,8 +90,9 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
 
         await status_orders(order_id, status)
         await callback.bot.edit_message_text(
-            chat_id=callback.from_user.id, text=f"Замовлення {order_id.zfill(4)} ✅ Прийняте\n\n➕ добавлено в ℹ️ Прийняте замовлення ", message_id=callback.message.message_id)
-        # await callback.bot.send_message(chat_id=chat_id_name, text=f"Замовлення {order_id} ➕ добавлено в ℹ️ Прийняте замовлення ")
+            chat_id=callback.from_user.id,
+            text=f"Замовлення {order_id.zfill(4)} ✅ Прийняте\n\n➕ добавлено в ℹ️ Прийняте замовлення ",
+            message_id=callback.message.message_id)
 
         logger.debug(order_id)
 
@@ -126,11 +104,12 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
             if user_data[3] == "client":
                 logger.debug(user_data)
                 order, order_data = db.get_orders(clients_telephone=user_data[4])
-                logger.debug(user_data[4])
-                logger.debug(order)
-                id = f"{order_data[0]}".zfill(4)
-                send_order = f"🛎 <b>Ваше замовлення</b> {id}\n\n🏦{user_data[4]}\n{user_data[4]} \n🫳{user_data[4]} по {user_data[4]} \nCума <b>{user_data[4]}</b>\n\n"
-                await callback.bot.send_message(chat_id=callback.from_user.id, text=send_order)
+                logger.debug(order_data)
+                if order:
+                    # Вы отримуйте
+                    id, address_exchanger,  currency_name, buy_or_sell, exchange_rate, order_sum = f"{order_data[0]}".zfill(4), order_data[3], order_data[4], order_data[5], order_data[6], order_data[7]
+                    send_order = f"🛎 <b>Ваше замовлення</b> {id}\n\n🏦{address_exchanger}\n{currency_name} \n🫳{buy_or_sell} по {exchange_rate} \nCума <b>{order_sum}</b>\n\n"
+                    await callback.bot.send_message(chat_id=callback.from_user.id, text=send_order)
 
 
     if callback.data == f"cancel_{order_id}":
@@ -146,20 +125,6 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
 
 all_orders =f"<a href='{getenv('API')}/admin/currency/orders/'>Все заказы</a>"
 
-@logger.catch
-def accept_order(order_id):
-    buttons = [
-        [
-            InlineKeyboardButton(text="✔️ Прийняти замовлення",
-                                 callback_data=f"accepted_{order_id}"),
-        ],
-        [
-            InlineKeyboardButton(text="❌ Відмінити замовлення",
-                                 callback_data=f"cancel_{order_id}"),
-        ],
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    return keyboard
 
 
 @router.message(F.text == "ℹ️ Прийняте замовлення")
@@ -183,18 +148,42 @@ async def ger_accepted_(message: types.Message):
         await message.answer(text='Немає Прийнятих замовлень')
 
 
+
+
+
+@router.message(lambda message: message.text.startswith("Разница="))
+async def set_difference(message: types.Message):
+    chat_id = get_users_data(role="moderator")
+    if chat_id == message.from_user.id:
+        try:
+            kop = message.text.split('=')[1].strip()
+            value = Decimal(kop) / 100  # переводим копейки в гривны
+            set_correction(value)
+            await message.answer(f"✅ Разница успешно установлена на {value} грн")
+        except Exception as e:
+            await message.answer("❌ Неверный формат. Используй: Разница=25")
+        logger.info(kop)
+
+
+
 @router.message(F.text == "on_order_send_message")
 async def echo_handler(message: types.Message):
     logger.info(message.text)
-    # await message.bot.send_message(chat_id=chat_id_name, text=f"{message.text}")
-    await order_send_message()
+    chat_id = get_users_data(role="moderator")
+    logger.info(chat_id)
+    await orders.order_send_message(chat_id)
 
+
+def get_users_data(role: str):
+    """Проверяем роль"""
+    res, user_data = db.exists_role(role)
+    if res:
+        return user_data[1]
 
 @router.message(F.text == "on_post_db")
-async def echo_handler(message: types.Message):
-    logger.info(message.text)
-    await post_to_db()
-
+async def echo_handler(msg: types.Message):
+    logger.info(msg.text)
+    await post_db.post_db()
 
 @router.message()
 async def echo_handler(msg: types.Message):
@@ -204,36 +193,4 @@ async def echo_handler(msg: types.Message):
             await msg.answer(f"Дякуємо за ваш номер \n📲{msg.contact.phone_number}",
                                  reply_markup=ReplyKeyboardRemove())
             await msg.answer(text=f"✨ Ласкаво просимо!\n\n {msg.from_user.first_name} Для перевірки броні\nнатисніть кнопку 👇🏻👇🏻👇🏻",
-                                 reply_markup=get_armor(msg.contact.phone_number))
-
-
-
-@logger.catch
-def kb_status_order(order_id):
-    buttons = [
-        [
-            InlineKeyboardButton(text="✅ Замовлення виконано",
-                                 callback_data=f"completed_{order_id}"),
-        ],
-        [
-            InlineKeyboardButton(text="❌ Відмінити замовлення",
-                                 callback_data=f"cancel_{order_id}"),
-        ],
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    return keyboard
-
-
-@logger.catch
-def api_res():
-    kb = [[KeyboardButton(text='ℹ️ Прийняте замовлення',
-                          callback_data=f"apiaccepted")],]
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=kb,
-        resize_keyboard=True, one_time_keyboard=True
-    )
-    return keyboard
-
-
-logger.add("../log/DEBUG.log", colorize=True,
-           format="{time:YYYY-MM-DD HH:mm:ss} {name} {line} {level} {message} ", level="DEBUG", rotation="500 KB", compression="zip")
+                                 reply_markup=get_armor(msg.from_user.id))
