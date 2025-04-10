@@ -30,16 +30,27 @@ UTM_RESERV = '?utm_source=telegram&utm_medium=private_obmen&utm_campaign=reserv&
 
 
 # Глобальная переменная
-correction_value = Decimal('0.15')
+diff_buy = Decimal('0.10')
+diff_sell = Decimal('0.10')
+
+set_diff_buy = ''
+set_diff_sell = ''
 
 
-def set_correction(value):
-    global correction_value
-    correction_value = Decimal(value)
+def set_correction(buy_str, sell_str):
+    global diff_buy, diff_sell
+    diff_buy = buy_str
+    diff_sell = sell_str
 
+def set_difference(buy_str, sell_str):
+    global set_diff_buy, set_diff_sell
+    set_diff_buy, set_diff_sell = buy_str, sell_str
+
+def get_difference():
+    return set_diff_buy, set_diff_sell
 
 def get_correction():
-    return correction_value
+    return diff_buy, diff_sell
 
 
 @logger.catch
@@ -81,7 +92,7 @@ async def send_currency(new_text):
     async with bot.session:  # or `bot.context()`
         main_kb = InlineKeyboardMarkup(inline_keyboard=[
             [
-                InlineKeyboardButton(text="Курс всіх валют",
+                InlineKeyboardButton(text="💱 Курс всіх валют",
                                      url=f'{getenv("API")}{UTM_ALL_KURS}',
                                      callback_data="event")
             ],
@@ -215,9 +226,10 @@ async def update_course(data_pars):
                     logger.debug(f"{curr_api['id']} {curr_api['code']} buy {curr['buy']} = {curr_api['buy']} sell {curr['sell']} = {curr_api['sell']}")
 
                     if curr_api['code'] == 'usd':
-                        new_buy = Decimal(curr['buy']) - correction_value
-                        new_sell = Decimal(curr['sell']) - correction_value
+                        new_buy = Decimal(curr['buy']) - correction_value[0]
+                        new_sell = Decimal(curr['sell']) - correction_value[1]
 
+                        logger.debug(f"{correction_value[0]}   {correction_value[1]}")
                         logger.debug(f"{curr_api['buy']} - {new_buy} / {new_sell} - {curr_api['sell']}")
 
                         if new_buy == Decimal(curr_api['buy']) and new_sell == Decimal(curr_api['sell']):

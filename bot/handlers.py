@@ -3,7 +3,7 @@ from decimal import Decimal
 from aiogram.types import Message
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.filters import Command
-from functions.all_fun import set_correction
+from functions.all_fun import set_correction, get_correction, get_difference, set_difference
 from functions import orders, post_db
 from allkeyboard.all_keyboard import get_armor, get_contact, kb_status_order, order_accepted
 import requests
@@ -151,18 +151,49 @@ async def ger_accepted_(message: types.Message):
 
 
 
-@router.message(lambda message: message.text.startswith("Разница="))
-async def set_difference(message: types.Message):
+@router.message(lambda message: message.text.startswith("Какой курс USD установлен❓"))
+async def get_corr(message: types.Message):
+    usd = get_usd_currency()
+    diff_buy, diff_sell = get_difference()
+    corr_buy, corr_sell = get_correction()
+    await message.answer(f"Установлен Курс\n<b>USD={diff_buy}/{diff_sell}</b>\nразница {corr_buy}/{corr_sell}")
+    if diff_buy == '':
+        await message.answer(f'Что установить Курс введите в поле сообщение.\nПример: USD={usd.get("buy")}/{usd.get("sell")}')
+
+def get_usd_currency():
+    try:
+        response = requests.get(f'{getenv("API")}/api/v1/currencys/')
+        response.raise_for_status()  # Проверка наличия ошибок
+        # Обработка ответа
+    except requests.exceptions.RequestException as e:
+        print('Произошла ошибка при выполнении запроса:', e)
+
+    if response.status_code == 200:
+        usd_data = response.json()
+        usd = usd_data.get("objects")[0]
+        return usd
+
+
+@router.message(lambda message: message.text.startswith("USD="))
+async def setDifference(message: types.Message):
     chat_id = get_users_data(role="moderator")
     if chat_id == message.from_user.id:
-        try:
-            kop = message.text.split('=')[1].strip()
-            value = Decimal(kop) / 100  # переводим копейки в гривны
-            set_correction(value)
-            await message.answer(f"✅ Разница успешно установлена на {value} грн")
-        except Exception as e:
-            await message.answer("❌ Неверный формат. Используй: Разница=25")
-        logger.info(kop)
+       usd = get_usd_currency()
+
+       if usd.get("code") == "usd":
+            _buy, _sell = get_correction()
+
+            try:
+                data = message.text.split('=')[1].strip()
+                buy_str, sell_str = data.split('/')
+                diff_buy = (Decimal(usd.get("buy")) + _buy) - Decimal(buy_str)
+                diff_sell = (Decimal(usd.get("sell")) + _sell) - Decimal(sell_str)
+                set_difference(buy_str, sell_str)
+                set_correction(buy_str=diff_buy, sell_str=diff_sell)
+                await message.answer(f'✅ Курс USD - Долар установлен {buy_str}/{sell_str}\n✅Разница составляет {diff_buy}/{diff_sell}\n\nКурс нового доллара minfin {(Decimal(usd.get("buy")) + _buy)} / {(Decimal(usd.get("sell")) + _sell)}')
+            except Exception as e:
+                logger.debug(e)
+                await message.answer(f'❌ Неверный формат. Пример: USD={usd.get("buy")}/{usd.get("sell")}')
 
 
 
