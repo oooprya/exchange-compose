@@ -57,8 +57,6 @@ services:
       - 4000:3000
     environment:
       - TZ=Europe/Kiev
-      - NEXT_API_KEY=oooprya:befd2bc28866e973e7ce
-      - NEXT_API_URL=https://exprivat.com.ua/api/v1
     depends_on:
       - nginx
     networks:
