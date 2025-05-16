@@ -40,9 +40,9 @@ services:
     volumes:
       - pgdata16:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: django_db
-      POSTGRES_USER: django_user
-      POSTGRES_PASSWORD: django_password
+      POSTGRES_DB: 
+      POSTGRES_USER: 
+      POSTGRES_PASSWORD: 
     ports:
       - 5432:5432
     networks:
