@@ -1,0 +1,9 @@
+button.handleShare{
+  display: flex;
+  align-items: center;
+cursor: pointer;
+  gap: 1rem;
+  border: none;
+  background: transparent;
+  color: var(--brand-color);
+}

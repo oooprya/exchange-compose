@@ -1,0 +1,41 @@
+.formControl {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 15px;
+  color: var(--text-light-color);
+}
+
+.input {
+  padding: 1rem;
+  font-weight: 400;
+  font-size: 1.5rem;
+  border-radius: 1rem;
+  background-color: transparent;
+  color: var(--white-color);
+  border: 1px solid var(--text-color);
+  outline: none;
+}
+
+.input.attention {
+  border: 1px solid var(--error-color);
+  background-color: var(--error-bg);
+}
+
+.input.warning {
+  border: 1px solid var(--warning-color);
+  background-color: var(--warning-bg);
+}
+
+.errorText {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, calc(100% + 0.15rem));
+  font-size: 0.75rem;
+  color: var(--error-color);
+}

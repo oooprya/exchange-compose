@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<h2>
+    {% if movement_type == "in" %}
+        ➕ Приход
+    {% else %}
+        ➖ Расход
+    {% endif %}
+</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    <label>Валюта:</label>
+    <select name="currency">
+        {% for currency in currencies %}
+            <option value="{{ currency.id }}">
+                {{ currency.code }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <label>Сумма:</label>
+    <input type="number" step="0.01" name="amount" required>
+
+    <label>Комментарий:</label>
+    <textarea name="comment"
+        class="border rounded px-3 py-2 w-full"
+        placeholder="Причина операции (необязательно)">
+    </textarea>
+
+    <button type="submit"
+        class="bg-primary-600 text-white px-4 py-2 rounded">
+        Провести
+    </button>
+
+</form>
+
+{% endblock %}

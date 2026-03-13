@@ -1,0 +1,28 @@
+{% block sidebar %}
+<div class="space-y-4">
+
+  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
+
+    <h3 class="text-lg font-semibold mb-4">
+        📊 Баланс кассы
+    </h3>
+
+    {% for b in current_balances %}
+        <div class="flex justify-between py-2 border-b last:border-0">
+            <span class="font-medium text-gray-600">
+                {{ b.currency.code }}
+            </span>
+            <span class="font-bold text-green-600">
+                {{ b.balance }}
+            </span>
+        </div>
+    {% empty %}
+        <div class="text-gray-400 text-sm">
+            Нет данных по балансу
+        </div>
+    {% endfor %}
+
+  </div>
+
+</div>
+{% endblock %}

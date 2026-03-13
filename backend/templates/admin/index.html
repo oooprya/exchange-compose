@@ -1,0 +1,307 @@
+{% extends "unfold/layouts/base_simple.html" %}
+{% load i18n unfold humanize %}
+
+
+
+{% block content %}
+<div class="space-y-6">
+
+<button id="sound-toggle" class="flex items-center justify-center w-9 h-9 rounded hover:bg-base-200 dark:hover:bg-base-700"  title="Звук уведомлений">🔔</button>
+    
+
+{% if dashboard_balances %}
+   
+{% for node in dashboard_balances %}
+       
+        <div class="bg-white rounded-2xl shadow-lg p-4 border border-gray-200 mb-6 rounded dark:bg-base-800 dark:border-base-700">
+
+            <h2 class="text-2xl font-bold mb-4 text-indigo-600">
+                🏦 {{ node.exchange_point }} 
+                
+            </h2>
+
+                <div>
+                    <h3 class="font-semibold mb-4">
+                       
+                        <div class="flex flex-row gap-4 bg-white justify-between dark:bg-base-900 p-4 rounded-xl shadow mb-4 border border-base-200 dark:border-base-700">
+                            <div class="flex flex-row gap-4">
+                                <div class="text-sm text-gray-600">
+                                    🏦 {{ node.node_name}}
+                                </div>
+                                
+                                <div class="text-sm text-gray-500" 
+                                    data-node="{{ node.node_id }}" data-cashier>
+                                    {% if node.cashier %}
+                                    🕒  {{ node.opened_at }}  
+                                    {% else %}
+                                        Нет активной смены
+                                    {% endif %}
+                                </div>
+                            </div>
+                        
+                            {% if node.phone %}
+                            <a class="text-sm text-gray-600" href="tel:{{ node.phone }}" data-node="{{ node.node_id }}" data-phone>
+                                {{ node.cashier }} 📞 {{ node.phone }}
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                      
+                        
+                    </h3>
+                
+
+                    <div class="grid gap-4 mb-4 md:grid-cols-2 lg:grid-cols-4 ">
+                        <!-- Остальные валюты -->
+                        {% for b in node.balances %}
+
+                            {% if b.currency != "usd" and  b.currency != "usd-new" and  b.currency != "usd-old" %}
+                            <div class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded shadow-xs p-4">
+                                
+                                <div class="text-sm text-gray-500 {% if b.currency == "uah" %} text-primary-500  {% endif %}">
+                                    {{ b.currency|upper }}
+                                </div>
+
+                                <div class="text-xl font-bold"
+                                    data-node="{{ node.node_id }}"
+                                    data-currency="{{ b.currency }}">
+                                    {{ b.amount|floatformat:2 }}
+                                </div>
+                            
+                            </div>
+
+                            {% endif %}
+                            {% if b.currency == "usd"  %}
+
+                            <!-- USD блок -->
+                            <div class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded shadow p-4">
+
+                                <div class="text-sm text-gray-500">
+                                    Общий USD
+                                </div>
+
+                                <div class="text-xl font-bold" data-node="{{ node.node_id }}" data-usd="total">
+                                    {{ node.usd.total|floatformat:2 }}
+                                </div>
+                               
+                                <div class="text-sm text-blue-600" data-usd-row="new" {% if node.usd.new == 0 %}style="display:none"{% endif %}>
+                                    💙 Новый:
+                                    <span data-node="{{ node.node_id }}" data-usd="new">
+                                        {{ node.usd.new|floatformat:2 }}
+                                    </span>
+                                </div>
+                                
+                                
+                                <div class="text-sm text-gray-500" data-usd-row="old" {% if node.usd.old == 0 %}style="display:none"{% endif %}>
+                                    Ватхий:
+                                    <span data-node="{{ node.node_id }}" data-usd="old">
+                                        {{ node.usd.old|floatformat:2 }}
+                                    </span>
+                                </div>
+                                
+
+                            </div> 
+                            {% endif %}
+                       
+                            
+                            
+                            
+                        {% endfor %}
+
+                        
+                    </div>
+
+                </div>
+
+
+        </div>
+
+        
+{% endfor %}
+
+{% else %}
+
+<div class="text-gray-500">Нет данных</div>
+
+{% endif %}
+
+</div>
+
+
+<script>
+{% comment %} const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+
+const socket = new WebSocket(
+    protocol + window.location.host + "/ws/dashboard/global/"
+); {% endcomment %}
+ const socket = new WebSocket(
+    (location.protocol === "https:" ? "wss://" : "ws://")
+    + location.host
+    + "/ws/dashboard/global/"
+); 
+socket.onopen = function() {
+    console.log("WebSocket connected");
+};
+
+socket.onmessage = function(event){
+
+    const data = JSON.parse(event.data);
+
+    updateBalances(data);
+    updateUsd(data);
+    updateCashier(data);
+    console.log("data:", data);
+    
+} 
+
+socket.onclose = function() {
+    console.log("WebSocket closed");
+};
+    
+
+function updateBalances(data){
+
+    if(!data.balances) return;
+
+    for(const currency in data.balances){
+
+        const amount = data.balances[currency];
+
+        const el = document.querySelector(
+            `[data-node="${data.node_id}"][data-currency="${currency}"]`
+        );
+
+        if(el){
+
+            el.innerText = new Intl.NumberFormat('uk-UA', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+
+            el.classList.add("flash-update");
+
+            setTimeout(()=>{
+                el.classList.remove("flash-update");
+            },1000);
+
+            playSound();
+        }
+    }
+}
+function formatMoney(v){
+    return new Intl.NumberFormat('uk-UA', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(v)
+}
+function updateUsd(data){
+
+
+    const total = document.querySelector(
+        `[data-node="${data.node_id}"][data-usd="total"]`
+    )
+
+    const usdNew = document.querySelector(
+        `[data-node="${data.node_id}"][data-usd="new"]`
+    )
+
+    const usdOld = document.querySelector(
+        `[data-node="${data.node_id}"][data-usd="old"]`
+    )
+
+    const newRow = usdNew?.closest('[data-usd-row="new"]')
+    const oldRow = usdOld?.closest('[data-usd-row="old"]')
+
+    const totalValue = data.usd_total || 0
+    const newValue = data.balances["usd-new"] || 0
+    const oldValue = data.balances["usd-old"] || 0
+
+    if(total){
+        total.innerText = formatMoney(totalValue)
+    }
+
+    if(usdNew){
+        usdNew.innerText = formatMoney(newValue)
+
+        if(newRow){
+            newRow.style.display = newValue === 0 ? "none" : ""
+        }
+    }
+
+    if(usdOld){
+        usdOld.innerText = formatMoney(oldValue)
+
+        if(oldRow){
+            oldRow.style.display = oldValue === 0 ? "none" : ""
+        }
+    }
+}
+
+function updateCashier(data){
+    console.log("updateCashier:", data);
+    const el = document.querySelector(
+        `[data-node="${data.node_id}"][data-cashier]`
+    );
+    const phone = document.querySelector(`[data-node="${data.node_id}"][data-phone]`
+    );
+
+    if(!el) return;
+
+    if(data.cashier){
+        console.log("data.cashier:", data.cashier);
+
+        el.innerText = "🕒 " + data.opened_at + " | " + data.cashier;
+        phone.innerText = " 📞 " +  data.phone;
+
+    }else{
+
+        el.innerText = "Нет активной смены";
+
+    }
+
+
+}
+
+let soundEnabled = localStorage.getItem("admin-sound") !== "off";
+
+const soundBtn = document.getElementById("sound-toggle");
+
+function updateSoundIcon(){
+    if(!soundBtn) return;
+    soundBtn.textContent = soundEnabled ? "🔔" : "🔕";
+}
+
+if(soundBtn){
+
+    updateSoundIcon();
+
+    soundBtn.addEventListener("click", () => {
+
+        soundEnabled = !soundEnabled;
+
+        localStorage.setItem(
+            "admin-sound",
+            soundEnabled ? "on" : "off"
+        );
+
+        updateSoundIcon();
+
+    });
+}
+
+
+function playSound(){
+
+    if(!soundEnabled) return;
+
+    const audio = document.getElementById("update-sound");
+
+    if(!audio) return;
+
+    audio.currentTime = 0;
+    audio.play().catch(()=>{});
+}
+
+</script>
+
+{% endblock %}

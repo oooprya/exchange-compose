@@ -1,0 +1,31 @@
+.select {
+  position: relative;
+  width: 100%;
+  font-size: 23px;
+  line-height: 28px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.current {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.arrow {
+  transition: transform 0.3s ease-in;
+  transform-origin: center;
+}
+
+.select.open .arrow {
+  transform: rotate(180deg);
+}

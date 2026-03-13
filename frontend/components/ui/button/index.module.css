@@ -1,0 +1,38 @@
+.btn {
+  padding: 1.5rem;
+  border-radius: var(--border-r-md);
+  outline: none;
+  border: none;
+  transition: opacity 0.15s ease-in;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.btn:not(:disabled):focus {
+  outline: 1px solid var(--brand-color);
+}
+
+.btn:disabled {
+  background-color: #3d3d3d;
+  color: #9a9a9a;
+  cursor: not-allowed;
+}
+
+.default {
+  background-color: var(--brand-color);
+  border: 1px solid transparent;
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--text-color);
+}
+
+.btnSmall {
+  padding: 1rem;
+}

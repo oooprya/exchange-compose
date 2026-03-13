@@ -1,0 +1,11 @@
+{% extends "admin/base_site.html" %} {% block content %}
+<div class="module">
+  <h2>💰 Внести гривну в кассу {{ cash_desk.name }}</h2>
+
+  <form method="post">
+    {% csrf_token %} {{ form.as_p }}
+
+    <button type="submit" class="button default">Подтвердить</button>
+  </form>
+</div>
+{% endblock %}

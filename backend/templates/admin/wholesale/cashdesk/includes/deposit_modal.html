@@ -1,0 +1,65 @@
+<div
+  id="depositModal"
+  style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  "
+>
+  <div
+    style="
+      background: white;
+      padding: 30px;
+      width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    "
+  >
+    <h2 style="margin-bottom: 20px">💰 Внести гривну</h2>
+
+    <form id="depositForm">
+      {% csrf_token %} {{ form.as_p }}
+
+      <div style="display: flex; gap: 10px; margin-top: 20px">
+        <button type="submit" class="button default">Подтвердить</button>
+
+        <button
+          type="button"
+          onclick="document.getElementById('depositModal').remove()"
+          class="button"
+        >
+          Отмена
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document
+    .getElementById("depositForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      fetch(window.location.pathname + "deposit-modal/", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")
+            .value,
+        },
+        body: formData,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            location.reload();
+          }
+        });
+    });
+</script>

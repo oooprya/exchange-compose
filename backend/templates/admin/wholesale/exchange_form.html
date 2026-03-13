@@ -1,0 +1,127 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h2 class="text-2xl font-bold text-emerald-600">
+    {% if order_type == "buy" %} Покупка валюты
+    {% elif order_type == "sell" %} Продажа валюты
+    {% elif order_type == "in" %} Приход
+    {% elif order_type == "out" %} Расход
+    {% endif %}
+    </h2>
+<div class="grid grid-cols-1 gap-6 mt-6">
+  <div class="form-rows dark:border-base-800 border aligned border-base-200 shadow-xs rounded">
+    <form method="post" class="flex flex-col gap-4 px-6 py-4">
+        {% csrf_token %}
+
+        <input type="hidden" name="order_type" value="{{ order_type }}">
+        <div class="flex flex-row gap-10 items-center">
+            <div class="lg:w-1/4 w-full">
+                <label class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark required">Валюта:</label>
+                <select name="currency" id="currency"  class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full pr-8! max-w-2xl appearance-none text-ellipsis ">
+                    {% for currency in currencies %}
+                        <option value="{{ currency.id }}">{{ currency.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mt-2 text-sm text-gray-600">
+                Текущий баланс:
+                <span id="current-balance" class="font-bold text-lg">0</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-10 items-center">
+            <div class="lg:w-1/4 w-full">
+                <label class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark required">Сумма:</label>
+                <input class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full max-w-2xl  " type="number" step="0.01" name="amount" id="amount" required>
+            </div>
+
+            {% if not is_movement %}
+            <div class="lg:w-1/4 w-full">
+                <label class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark required">Курс:</label>
+                <input type="number" step="0.01" name="rate" id="rate" required class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full max-w-2xl ">
+            </div>
+            
+         </div>
+
+         <div class="border-t items-center flex flex-row gap-4 p-3 py-2.5 mt-6 dark:bg-base-800 dark:border-base-700 2xl:border-t-0! 2xl:bg-transparent! 2xl:px-0">
+            <p>Эквивалент UAH:  <span id="uah_result" class="text-2xl font-semibold text-important tracking-tight max-w-2xl lg:text-3xl">0</span> Гривен</p>
+         </div>
+         {% endif %}
+
+         {% if is_movement %}
+            <div class="lg:w-1/4 w-full">
+                <label class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark required">Комментарий</label>
+                <textarea name="comment" rows="2" class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-sm text-font-default-light text-sm focus:ring focus:ring-primary-300 focus:border-primary-600 focus:outline-none group-[.errors]:border-red-600 group-[.errors]:focus:ring-red-200 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:focus:border-primary-600 dark:focus:ring-primary-700 dark:focus:ring-opacity-50 dark:group-[.errors]:border-red-500 dark:group-[.errors]:focus:ring-red-600/40 px-3 py-2 w-full max-w-4xl appearance-none expandable transition transition-height duration-75 ease-in-out "></textarea>
+            </div>
+            {% endif %}
+        <div class="fixed w-full left-0 bottom-0 lg:relative bg-white justify-between border-t border-base-200 flex flex-col lg:flex-row gap-6 p-3 py-2.5 mt-6 dark:bg-base-800 dark:border-base-700 2xl:border-t-0! 2xl:bg-transparent! 2xl:px-0">
+            
+            
+            <button type="submit"  class="bg-primary-600 block border border-transparent cursor-pointer font-medium px-3 py-2 rounded text-white">
+                Провести
+            </button>
+            
+            <a href="{% url 'admin:wholesale_wholesaleorder_changelist' %}"
+                class="btn btn-active border-transparent cursor-pointer font-medium px-3 py-2 rounded flex flex-row gap-2 items-center">
+                Отмена
+            </a>
+           
+        </div>
+    
+    </form>
+</div>
+</div>
+<script>
+
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const currencyField = document.querySelector("[name='currency']");
+    const balanceEl = document.getElementById("current-balance");
+
+    const balanceUrl = "{% url 'admin:wholesale_get_balance' %}";
+
+    function loadBalance(currencyId) {
+        fetch(`${balanceUrl}?currency=${currencyId}`)
+            .then(response => response.json())
+            .then(data => {
+                balanceEl.innerText = Number(data.balance).toLocaleString();
+            })
+            .catch(err => console.error(err));
+    }
+
+    if (currencyField) {
+        currencyField.addEventListener("change", function() {
+            loadBalance(this.value);
+        });
+
+        if (currencyField.value) {
+            loadBalance(currencyField.value);
+        }
+    }
+
+});
+
+
+const amountInput = document.getElementById("amount");
+const rateInput = document.getElementById("rate");
+const result = document.getElementById("uah_result");
+
+function calculate() {
+    const amount = parseFloat(amountInput.value) || 0;
+    const rate = parseFloat(rateInput.value) || 0;
+    const total = amount * rate;
+    // Форматируем число
+    result.innerText = total.toLocaleString('ru-RU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+amountInput.addEventListener("input", calculate);
+rateInput.addEventListener("input", calculate);
+</script>
+
+{% endblock %}
+
+

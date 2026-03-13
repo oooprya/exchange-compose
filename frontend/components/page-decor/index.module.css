@@ -1,0 +1,47 @@
+.leftTop {
+  position: absolute;
+  width: 180px;
+  height: 383px;
+  top: 100px;
+  left: 0;
+  z-index: -1;
+}
+
+.rightTop {
+  position: absolute;
+  width: 399px;
+  height: 881px;
+  top: 0;
+  right: 0;
+  z-index: -10;
+}
+
+.leftBottom {
+  position: absolute;
+  width: 426px;
+  height: 512px;
+  bottom: 0;
+  left: -100px;
+  scrollbar-gutter: stable;
+  z-index: -11;
+}
+
+.rightBottom {
+  position: absolute;
+  width: 445px;
+  height: 672px;
+  bottom: 0;
+  right: 0;
+  scrollbar-gutter: stable;
+  z-index: -12;
+}
+
+
+
+
+@media screen and (max-width: 576px) {
+.rightTop {
+  width: 200px;
+  height: 500px;
+}
+}

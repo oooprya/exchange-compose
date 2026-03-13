@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# install python dependencies
+RUN pip install --upgrade pip
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# copy project
+COPY . .
+
+# copy and make build script executable
+COPY build.sh /build.sh
+RUN chmod +x /build.sh
+
+# run build script
+ENTRYPOINT ["/build.sh"]

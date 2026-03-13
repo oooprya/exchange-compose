@@ -1,0 +1,32 @@
+{% extends "unfold/layouts/base.html" %} {% block content %}
+
+<div class="p-6 bg-white rounded shadow">
+  <h2 class="text-xl font-semibold mb-4">🧾 Отчёт по смене</h2>
+
+  <table class="min-w-full text-sm">
+    <thead>
+      <tr class="border-b">
+        <th class="text-left py-2">Валюта</th>
+        <th class="text-left py-2">Начало</th>
+        <th class="text-left py-2">Конец</th>
+        <th class="text-left py-2">Разница</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for code, data in report.items %}
+      <tr class="border-b">
+        <td class="py-2">{{ code }}</td>
+        <td>{{ data.start }}</td>
+        <td>{{ data.end }}</td>
+        <td
+          class="{% if data.diff < 0 %}text-red-600{% else %}text-green-600{% endif %}"
+        >
+          {{ data.diff }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+.input {
+  padding: 1rem 1.5rem;
+  background: transparent;
+  outline: none;
+  font-size: 28px;
+  color: var(--text-color);
+  border: 1px solid var(--text-color);
+  border-radius: var(--border-r-md);
+}
+
+.input::placeholder {
+  font-size: 1.36rem;
+}
+
+.input:focus {
+  outline: 1px solid var(--text-color);
+}
+
+.input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input[type="number"]::-webkit-inner-spin-button,
+.input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@media screen and (max-width: 576px) {
+  .input {
+    padding: 0.625rem 1.5rem;
+  }
+}

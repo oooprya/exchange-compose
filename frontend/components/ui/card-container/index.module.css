@@ -1,0 +1,23 @@
+.Card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  height: 100%;
+  padding: 2.5rem;
+  border: 1px solid var(--border-brand-ghost);
+  border-radius: 1rem;
+  width: 100%;
+  /* Glassmorphism */
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10.8px);
+  -webkit-backdrop-filter: blur(10.8px);
+  transition: background-color 0.15s ease-in-out;
+}
+
+@media screen and (max-width: 420px) {
+  .Card {
+    padding: 1.5rem;
+  }
+}

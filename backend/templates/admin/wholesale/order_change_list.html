@@ -1,0 +1,276 @@
+{% extends "admin/change_list.html" %} 
+{% load i18n unfold static humanize %}
+
+{% block content %}
+<div  x-data="{ changeListWidth: window.innerWidth }"
+    x-init="
+        changeListWidth = window.innerWidth;
+        window.addEventListener('resize', () => changeListWidth = window.innerWidth)
+    ">
+
+{% if needs_node_selection %}
+        {# ══════════════════════════════════════════════════════════════════════════ #}
+        {# ВЫБОР КАССЫ — перекрывает список заказов пока смена не открыта             #}
+        {# ══════════════════════════════════════════════════════════════════════════ #}
+        <div class="flex items-center mt-20" id="node-select-wrapper">
+        <div class="bg-white border flex flex-col justify-center max-w-2xl min-w-56 relative w-full
+                    leading-none py-6 -right-2 rounded shadow-lg p-6
+                    dark:bg-base-800 dark:border-base-700">
+
+            {# Заголовок #}
+            <h2 class="text-xl font-semibold mb-4">
+            Смена не открыта
+            </h2>
+
+            {# Спиннер — показывается пока идёт авто-открытие (одна касса) или после нажатия кнопки #}
+            <div id="node-spinner" class="hidden flex items-center gap-2 text-sm text-gray-500 mb-4">
+            <svg class="animate-spin h-4 w-4 text-primary-600"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10"
+                        stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            Відкриваємо зміну…
+            </div>
+
+            {# Дропдаун — скрыт если касса одна (авто-выбор) #}
+            <div id="node-select-body" class="{% if auto_select_node %}hidden{% endif %}">
+            <select id="nodeSelect"
+                    class="mb-4 border rounded px-3 py-2 w-full
+                            dark:bg-base-700 dark:border-base-600">
+                <option value="">Виберіть касу</option>
+                {% for node in available_nodes %}
+                <option value="{{ node.id }}">
+                    {{ node.name }}{% if node.exchange_point %} ({{ node.exchange_point }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+
+            {# Ошибка #}
+            <p id="node-error"
+                class="hidden text-sm text-red-600 dark:text-red-400 mb-3"></p>
+
+            <button id="openShiftBtn"
+                    onclick="openShift()"
+                    class="font-medium flex group items-center gap-2 px-3 py-2 relative
+                            justify-center whitespace-nowrap cursor-pointer px-5 py-2.5
+                            text-[14px] border border-base-200 bg-primary-600
+                            border-transparent text-white rounded w-full
+                            disabled:opacity-50 disabled:cursor-not-allowed">
+                ▶ Відкрити зміну
+            </button>
+            </div>
+
+        </div>
+        </div>
+
+        <script>
+        (function () {
+        const SELECT_URL = "{% url 'admin:wholesale_select_node' %}";
+        const CSRF       = "{{ csrf_token }}";
+
+        function showSpinner() {
+            document.getElementById("node-spinner").classList.remove("hidden");
+            document.getElementById("node-select-body").classList.add("hidden");
+        }
+
+        function showError(msg) {
+            const err = document.getElementById("node-error");
+            err.textContent = msg;
+            err.classList.remove("hidden");
+            document.getElementById("node-spinner").classList.add("hidden");
+            document.getElementById("node-select-body").classList.remove("hidden");
+            document.getElementById("openShiftBtn").disabled = false;
+        }
+
+        window.openShift = function (nodeId) {
+            if (!nodeId) {
+            const sel = document.getElementById("nodeSelect");
+            nodeId = sel ? sel.value : null;
+            }
+
+            if (!nodeId) {
+            showError("Будь ласка, оберіть касу");
+            return;
+            }
+
+            document.getElementById("openShiftBtn").disabled = true;
+            showSpinner();
+
+            fetch(SELECT_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": CSRF,
+            },
+            body: "node_id=" + encodeURIComponent(nodeId),
+            })
+            .then(r => r.json())
+            .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                showError(data.error || "Помилка відкриття зміни");
+            }
+            })
+            .catch(() => showError("Помилка мережі, спробуйте знову"));
+        };
+
+        // Одна касса — открываем автоматически сразу после загрузки страницы
+        {% if auto_select_node %}
+        document.addEventListener("DOMContentLoaded", function () {
+            showSpinner();
+            openShift({{ available_nodes.0.pk }});
+        });
+        {% endif %}
+        })();
+        </script>
+
+{% else  %}
+
+    {% if current_shift %}
+    <div class="grid lg:grid-cols-4 gap-6">
+        <!-- Таблица -->
+        
+        <div class="lg:col-span-3 col-span-full">
+            <div class="flex justify-end mb-4">
+                <button id="open-balance"
+                            class="lg:hidden text-primary-600 px-4 py-2 rounded-full border shadow-lg border-primary-600 dark:text-white">
+                            📊 Баланс кассы
+                </button>
+            </div>
+            <div class="flex flex-row lg:flex-row-reverse px-4 gap-4 justify-between fixed w-full left-0 bottom-0 lg:relative">
+                <div class="flex flex-row font-medium gap-4 py-4">
+
+                    <a href="exchange/?type=in" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer px-5 py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded hover:bg-emerald-100">
+                        ➕ <span class="hidden lg:flex">Приход</span>
+                    </a>
+
+                    <a href="exchange/?type=out"
+                    class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer px-5 py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded bg-red-50 text-red-700 hover:bg-red-100">
+                        ➖ <span class="hidden lg:flex">Расход</span>
+                    </a>
+
+
+                </div>
+                <div class="flex flex-row font-medium gap-4 py-4">
+                    <a href="exchange/?type=buy" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer px-5 py-2.5 text-[14px]
+                        border border-base-200 bg-primary-600 border-transparent text-white rounded">▼ Купить</a>
+                    <a href="exchange/?type=sell" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer px-5 py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded 
+                    ">🔺 Продать</a>
+                </div>
+
+            </div>
+ 
+        {% block result_list %}
+        <!-- Контейнер для мобильной версии -->
+        <div class="flex flex-col gap-2 lg:hidden rounded border result_orders_list dark:bg-base-900 dark:border-base-800 border-base-200">
+            {% for obj in cl.result_list %}
+            
+                <a href="{% url 'admin:wholesale_wholesaleorder_change' obj.pk %}" class="flex w-full group relative">
+                    <div class="border-b last:border-0 leading-none bg-gray-200 text-gray-600 px-2 py-2 flex gap-2 w-full items-center shadow dark:bg-base-900 dark:border-base-800 border-base-200">
+                    <!-- Время --> <span class="text-xs text-gray-500 font-mono"> {{ obj.created_at|date:"H:i" }} </span>
+
+                    <!-- Тип операции --> 
+                     {% if obj.order_type == "buy" %}  <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"> Купівля </span> 
+                     {% elif obj.order_type == "sell" %} <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"> Продаж </span> 
+                     {% elif obj.order_type == "in" %} <span class="px-2 py-1 rounded text-xs bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400"> Прихід </span> 
+                     {% elif obj.order_type == "out" %} <span class="px-2 py-1 rounded text-xs g-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"> Розхід </span> {% endif %} 
+                     <!-- Валюта --> <span class="font-semibold"> {{ obj.currency.code }} </span>
+
+
+                        <div class="font-mono text-gray-700"> 
+                            <!-- IN / OUT --> 
+                            {% if obj.order_type == "in" or obj.order_type == "out" %} 
+                                {{ obj.amount_currency|floatformat:0  }} 
+                                {% if obj.comment %} 
+                                    <span class="text-gray-400 ml-2"> {{ obj.comment }} </span> 
+                                {% endif %} 
+                            {% endif %} 
+                            <!-- BUY / SELL --> 
+                            {% if obj.order_type == "buy" or obj.order_type == "sell" %} 
+                            {{ obj.amount_currency|floatformat:0 }} × {{ obj.rate|floatformat:2 }} = <span class="font-semibold"> {{ obj.amount_base|floatformat:0  }} </span> 
+                            {% endif %} 
+                        </div>
+                    </div>
+
+                 
+                </a>
+    
+           
+            {% endfor %}
+        </div>
+        <!-- Стандартный вид для десктопа -->
+        <div class="hidden flex-col lg:flex">
+            {{ block.super }}
+        </div>
+        {% endblock %}
+    </div>
+
+    <!-- Overlay -->
+    <div id="balance-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden"></div>
+
+    <div id="balance-drawer" class="bg-white border hidden lg:flex z-50 flex-col leading-none py-1 lg:translate-x-full rounded shadow-lg w-80  dark:bg-base-800 dark:border-base-700 shadow-xl transform lg:static lg:translate-x-0 lg:w-auto lg:shadow-none">
+        
+        <p class="font-semibold mb-2 mx-1 px-3 py-1.5">
+            📊 Баланс кассы <button id="close-balance" class="lg:hidden text-gray-500 text-xl ">×</button>
+        </p>
+
+        {% for b in current_balances %}
+            <div class="flex justify-between py-2 border-b last:border-0 flex-row leading-none px-3 py-1.5 border-base-200 dark:border-base-700">
+                <span class="font-medium text-gray-600">
+                    {{ b.currency.name }}
+                </span>
+                <span class="font-bold text-green-600">
+                    {{ b.balance }}
+                </span>
+            </div>
+        {% empty %}
+            <div class="text-gray-400 text-sm">
+                Нет данных по балансу
+            </div>
+        {% endfor %}
+
+        
+    
+      </div>
+      {# ── конец правой части ────────────────────────────────────────────── #}
+
+    </div>
+    {# ── конец grid ──────────────────────────────────────────────────────── #} 
+
+    {% endif %}{# current_shift #}
+
+{% endif %}{# needs_node_selection #}
+
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const openBtn = document.getElementById("open-balance");
+    const closeBtn = document.getElementById("close-balance");
+    const drawer = document.getElementById("balance-drawer");
+    const overlay = document.getElementById("balance-overlay");
+
+    if (!drawer || !overlay) return;
+
+    function openDrawer() {
+        drawer.classList.remove("hidden");
+        overlay.classList.remove("hidden");
+    }
+
+    function closeDrawer() {
+        drawer.classList.add("hidden");
+        overlay.classList.add("hidden");
+    }
+
+    if (openBtn) openBtn.addEventListener("click", openDrawer);
+    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+    if (overlay) overlay.addEventListener("click", closeDrawer);
+
+});
+</script>
+
+{% endblock %}

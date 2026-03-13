@@ -1,17 +1,23 @@
 #!/bin/sh
+set -e
 
-if [ "$DATABASE" = "postgres" ]
-then
-    echo "Waiting for postgres..."
+echo "Waiting for postgres..."
+while ! nc -z ${SQL_HOST:-db} ${DB_PORT:-5432}; do
+  sleep 1
+done
+echo "PostgreSQL started"
 
-    while ! nc -z $SQL_HOST $SQL_PORT; do
-      sleep 0.1
-    done
-
-    echo "PostgreSQL started"
+# Don't flush database in production
+if [ "$DEBUG" = "1" ]; then
+  echo "Running in DEBUG mode..."
+else
+  echo "Running in PRODUCTION mode..."
 fi
 
-python manage.py flush --no-input
-python manage.py migrate
+# Apply migrations
+python manage.py migrate --noinput
+
+# Collect static files
+python manage.py collectstatic --noinput
 
 exec "$@"

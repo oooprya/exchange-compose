@@ -1,0 +1,68 @@
+.header {
+  padding: 1.5rem 0;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0 0.5rem;
+  border-radius: var(--border-r-sm);
+  transition: opacity 0.15s ease-in;
+  color: var(--brand-accent-color);
+}
+
+.logo span {
+  font-weight: 300;
+}
+
+.logo:hover {
+  opacity: 0.85;
+}
+
+.logo:focus {
+  padding: 0.25rem 0.5rem;
+  outline: 1px solid var(--brand-color);
+}
+
+.logoImg {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+@media screen and (max-width: 576px) {
+  .header {
+    padding: 2.8rem 0 2rem;
+  }
+
+  .logo {
+    flex-flow: wrap;
+    flex: 0 0 130px;
+    align-items: flex-start;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    display: flex;
+    position: relative;
+    gap: 0;
+  }
+  .logo span {
+    font-size: .8rem;
+    line-height: 0;
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+  }
+  .logoImg {
+    width: 2rem;
+    height: 2rem;
+  }
+}

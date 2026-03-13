@@ -1,2 +1,54 @@
-.env/
+# Environment variables
+.env*
+.env.local
+.env.prod
+.env.prod.local
+
+# IDE
+.vscode/
 .vscode/sftp.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Django
+*.log
+db.sqlite3
+staticfiles/
+media/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project files
+debug.png
+Logs.log
+rates.db
+backup*.sql
+backup*.sql.gz
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Docker
+docker-compose.override.yml
+

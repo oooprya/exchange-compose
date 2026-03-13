@@ -1,0 +1,185 @@
+:root {
+  --linear-gradient: linear-gradient(
+    to right,
+    rgba(81, 216, 111, 0.8),
+    rgba(81, 216, 111, 0.8)
+  );
+  --brand-color: #ffcc00;
+  --brand-accent-color: #ffb800;
+  --blure-brand-color: rgb(255, 204, 0, 0.5);
+  --black-color: #000000;
+  --text-color: #f5f5f5;
+  --text-light-color: #c0c0c0;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-brand-ghost: rgba(255, 204, 0, 0.3);
+  --error-color: #ff5a5d;
+  --error-bg: rgba(255, 90, 93, 0.2);
+  --warning-color: #855d0b;
+  --warning-bg: rgb(133, 93, 11, 0.2);
+
+  --border-r-lg: 2rem;
+  --border-r-md: 0.9375rem;
+  --border-r-sm: 0.625rem;
+  --container-width: 1200px;
+  --container-padding: 15px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Minimal CSS Reset */
+html,
+body,
+div,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+
+/* HTML5 display-role reset for older browsers */
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
+}
+
+ol,
+ul {
+  list-style: none;
+}
+
+blockquote,
+q {
+  quotes: none;
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+  content: "";
+  content: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--black-color);
+  color: var(--text-color);
+  line-height: 1;
+}
+
+main {
+  margin-top: 2rem;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.simplebar-track.simplebar-vertical .simplebar-scrollbar:before {
+  background-color: var(--brand-color);
+}
+
+@media screen and (max-width: 576px) {
+  main {
+    margin-top: 0;
+  }
+}
