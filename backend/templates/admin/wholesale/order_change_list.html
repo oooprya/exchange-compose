@@ -2,6 +2,28 @@
 {% load i18n unfold static humanize %}
 
 {% block content %}
+{% if messages %}
+  <div id="django-messages" class="mb-4 space-y-2">
+    {% for message in messages %}
+      {# Determine alert color by message.tags (Django messages) #}
+      <div class="relative mb-3 px-3 py-2.5 leading-[18px] rounded-default {% if "error" in message.tags %}errornote mb-3 group-[.inline-tabular]:mb-0 group-[.inline-tabular]:mt-3 group-[.inline-tabular]:mx-3 group-[.inline-stacked]:mb-3 group-[.inline-stacked]:mt-3 group-[.inline-stacked]:mx-3 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 {% elif "warning" in message.tags %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% elif "success" in message.tags %}mb-3 px-3 py-2.5 leading-[18px] rounded-default bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 {% else %}bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300{% endif %}" data-message-tags="{{ message.tags }}">
+        <button type="button" class="absolute top-2 right-2 text-sm opacity-60 hover:opacity-100" aria-label="Закрыть" onclick="this.closest('[data-message-tags]').remove()">×</button>
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const alerts = document.querySelectorAll('#django-messages [data-message-tags]');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          alert.classList.add('opacity-0', 'transition', 'duration-300');
+          setTimeout(() => alert.remove(), 300);
+        }, 10000);
+      });
+    });
+  </script>
+{% endif %}
 <div  x-data="{ changeListWidth: window.innerWidth }"
     x-init="
         changeListWidth = window.innerWidth;
@@ -128,19 +150,53 @@
 
 {% else  %}
 
-    {% if current_shift %}
-    <div class="grid lg:grid-cols-4 gap-6">
-        <!-- Таблица -->
+{% if current_shift or is_senior %}
+  <div class="grid lg:grid-cols-4 gap-6">
+ 
+    {# ── Левая часть ─────────────────────────────────────────────────────── #}
+    <div class="lg:col-span-3 col-span-full">
+
+ 
+      {# ── Переключатель касс для SENIOR ──────────────────────────────────── #}
+      {% if is_senior and all_nodes %}
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">Каса:</span>
+ 
+ 
+        {% for node in all_nodes %}
+        <a href="{% url 'admin:wholesale_wholesaleorder_changelist' %}?shift__node__id={{ node.pk }}"
+            data-node-id="{{ node.pk }}"
+            class="node-tab px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors
+                    {% if selected_node_id == node.pk %}
+                    bg-primary-600 text-white border-primary-600
+                    {% else %}
+                    bg-white text-gray-600 border-gray-300 hover:border-primary-400
+                    dark:bg-base-800 dark:text-gray-300 dark:border-base-600
+                    {% endif %}">
+            {{ node.name }}
+        </a>
+        {% endfor %}
+      </div>
+
+      
+      {% endif %}
+      {# ── конец переключателя ─────────────────────────────────────────────── #}
+
+    
         
-        <div class="lg:col-span-3 col-span-full">
+        
             <div class="flex justify-end mb-4">
                 <button id="open-balance"
                             class="lg:hidden text-primary-600 px-4 py-2 rounded-full border shadow-lg border-primary-600 dark:text-white">
-                            📊 Баланс кассы
+                            📊 Баланс 
+                            {% if is_senior and selected_node %}
+                                <span class="text-sm font-normal text-gray-500 ml-1">{{ selected_node.name }}</span>
+                            {% endif %}
                 </button>
             </div>
-            <div class="flex flex-row lg:flex-row-reverse px-4 gap-4 justify-between fixed w-full left-0 bottom-0 lg:relative">
-                <div class="flex flex-row font-medium gap-4 py-4">
+            {% if not is_senior %}
+            <div class="flex flex-row lg:flex-row-reverse px-4 gap-4 justify-between fixed w-full left-0 bottom-0 lg:relative py-4">
+                <div class="flex flex-row font-medium gap-4 ">
 
                     <a href="exchange/?type=in" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer px-5 py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded hover:bg-emerald-100">
                         ➕ <span class="hidden lg:flex">Приход</span>
@@ -153,22 +209,24 @@
 
 
                 </div>
-                <div class="flex flex-row font-medium gap-4 py-4">
+                <div class="flex flex-row font-medium gap-4 ">
                     <a href="exchange/?type=buy" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer px-5 py-2.5 text-[14px]
                         border border-base-200 bg-primary-600 border-transparent text-white rounded">▼ Купить</a>
                     <a href="exchange/?type=sell" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer px-5 py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded 
                     ">🔺 Продать</a>
                 </div>
+            </div>
+            
 
             </div>
- 
+        {% endif %}
         {% block result_list %}
         <!-- Контейнер для мобильной версии -->
         <div class="flex flex-col gap-2 lg:hidden rounded border result_orders_list dark:bg-base-900 dark:border-base-800 border-base-200">
             {% for obj in cl.result_list %}
             
-                <a href="{% url 'admin:wholesale_wholesaleorder_change' obj.pk %}" class="flex w-full group relative">
-                    <div class="border-b last:border-0 leading-none bg-gray-200 text-gray-600 px-2 py-2 flex gap-2 w-full items-center shadow dark:bg-base-900 dark:border-base-800 border-base-200">
+                {% comment %} <a href="{% url 'admin:wholesale_wholesaleorder_change' obj.pk %}" class="flex w-full group relative"> {% endcomment %}
+                    <div class="{% if obj.is_reversed %}opacity-50 line-through{% endif %} border-b last:border-0 leading-none bg-gray-200 text-gray-600 px-2 py-2 flex gap-2 w-full items-center shadow dark:bg-base-900 dark:border-base-800 border-base-200">
                     <!-- Время --> <span class="text-xs text-gray-500 font-mono"> {{ obj.created_at|date:"H:i" }} </span>
 
                     <!-- Тип операции --> 
@@ -192,10 +250,26 @@
                             {{ obj.amount_currency|floatformat:0 }} × {{ obj.rate|floatformat:2 }} = <span class="font-semibold"> {{ obj.amount_base|floatformat:0  }} </span> 
                             {% endif %} 
                         </div>
+                       
+                        <div class="ml-auto">
+                            {% if obj.can_reverse and not obj.is_reversed %}
+                                <a href="{% url 'admin:reverse_order' obj.id %}"
+                                onclick="return confirm('Сторнировать операцию?')"
+                                class="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 active:scale-95 transition">
+                                    ❌
+                                </a>
+                            {% else %}
+                                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-400"
+                                    title="Заказ отменен">
+                                    ✓
+                                </span>
+                            {% endif %}
+                        </div>
                     </div>
 
                  
-                </a>
+                {% comment %} </a> {% endcomment %}
+                
     
            
             {% endfor %}
@@ -210,7 +284,7 @@
     <!-- Overlay -->
     <div id="balance-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden"></div>
 
-    <div id="balance-drawer" class="bg-white border hidden lg:flex z-50 flex-col leading-none py-1 lg:translate-x-full rounded shadow-lg w-80  dark:bg-base-800 dark:border-base-700 shadow-xl transform lg:static lg:translate-x-0 lg:w-auto lg:shadow-none">
+    <div id="balance-drawer" class="bg-white border hidden lg:flex flex-col leading-none py-1 lg:translate-x-full rounded shadow-lg w-80  dark:bg-base-800 dark:border-base-700 shadow-xl transform lg:static lg:translate-x-0 lg:w-auto">
         
         <p class="font-semibold mb-2 mx-1 px-3 py-1.5">
             📊 Баланс кассы <button id="close-balance" class="lg:hidden text-gray-500 text-xl ">×</button>
@@ -246,6 +320,41 @@
 
 </div>
 
+<!-- МОДАЛЬНОЕ ОКНО ОТМЕНЫ ЗАКАЗА -->
+<div id="reverseModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white dark:bg-base-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">Отмена заказа</h3>
+        
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Выбрать причину:</label>
+            <select id="reversalReason" class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600">
+                <option value="wrong_rate">❌ Неправильный курс</option>
+                <option value="wrong_direction">🔄 Перепутал операцию (купить/продать)</option>
+                <option value="wrong_amount">🔢 Неправильная сумма</option>
+                <option value="other">❓ Другая причина</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Комментарий (опционально):</label>
+            <textarea id="reversalComment" rows="3" class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600"></textarea>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" 
+                    onclick="closeReverseModal()"
+                    class="flex-1 px-4 py-2 border rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-base-700">
+                Отмена
+            </button>
+            <button type="button" 
+                    onclick="confirmReverse()"
+                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Отменить заказ
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
@@ -271,6 +380,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (overlay) overlay.addEventListener("click", closeDrawer);
 
 });
+
 </script>
 
 {% endblock %}

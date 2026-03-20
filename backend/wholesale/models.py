@@ -89,8 +89,8 @@ class CashMovement(models.Model):
     TYPE_CHOICES = (
         ('in', 'Приход'),
         ('out', 'Расход'),
-        # ('transfer_out', 'Передача (списание)'),
-        # ('transfer_in', 'Передача (приход)'),
+        ('buy', '⬇ Покупка'),
+        ('sell', '⬆ Продажа'),
         # ('shift_open', 'Открытие смены'),
         # ('shift_close', 'Закрытие смены'),
         # ("collection_out", "Инкассация вывоз"),
@@ -235,6 +235,14 @@ class WholesaleOrder(models.Model):
     currency = models.ForeignKey(
         Currency, verbose_name="Валюта", on_delete=models.CASCADE)
 
+    base_currency = models.ForeignKey(
+        Currency,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="base_orders"
+    )
+
     order_type = models.CharField(max_length=10, choices=ORDER_TYPES)
 
     amount_currency = models.DecimalField(
@@ -252,8 +260,8 @@ class WholesaleOrder(models.Model):
         null=True,
         blank=True
     )
-    old_currency = models.BooleanField(
-        verbose_name="Ветхая купюра",
+    is_reversed = models.BooleanField(
+        verbose_name="Сторно",
         default=False
     )
     amount_base = models.DecimalField(
@@ -264,10 +272,6 @@ class WholesaleOrder(models.Model):
     comment = models.TextField(verbose_name="Комментарий", blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-
-    # def save(self, *args, **kwargs):
-    #     self.amount_uah = Decimal(self.amount_currency) * Decimal(self.rate)
-    #     super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-created_at"]

@@ -1,63 +1,59 @@
+from loguru import logger
+import aiohttp
 from aiogram import types, F, Router
 from decimal import Decimal
 from aiogram.types import Message
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.filters import Command
-from functions.all_fun import set_correction, get_correction, get_difference, set_difference
+from config import db, API_URL_CURRENCYS, API_BASE, USD_PATTERN, ADMIN_CHAT_ID, API_KEY, PATTERN, EUR_PATTERN, B_PATTERN
+from functions.all_fun import update_currency_usd, status_orders, parse_trade_message
 from functions import orders, post_db
 from allkeyboard.all_keyboard import get_armor, get_contact, kb_status_order, order_accepted
 import requests
 
-from os import getenv
-from functions.db_main import Database
-from loguru import logger
 
-orders_url = f'{getenv("API")}/api/v1/orders/?status=new'
-get_status = f'{getenv("API")}/api/v1/orders/?status=accepted'
+get_status = f'{API_BASE}/api/v1/orders/?status=accepted'
 
-headers = {"Authorization": f"ApiKey {getenv('API_KEY')}"}
+headers = {"Authorization": f"ApiKey {API_KEY}"}
 
 router = Router()
-
-db = Database()
-
-chat_id_name = getenv("Admin")
 
 
 @router.message(Command("start"))
 async def start_handler(msg: Message):
     try:
         # Получаем информацию о пользователе
-        chat_id = msg.from_user.id
+        new_chat_id = str(msg.from_user.id)
         username = msg.from_user.username or "Без username"
 
         # Проверяем существование пользователя
-        exists, user_data = db.user_exists(chat_id)
+        exists, user_data = db.user_exists(new_chat_id)
 
         if exists:
             logger.debug(user_data)
-            if user_data[3] == "client":
-                if user_data[4] == '':
-                    await msg.answer(text='Щоб побачити свою бронь Натисніть кнопку 📲 Надіслати свій контакт кнопка в меню 👇 👇 👇',
-                                    reply_markup=get_contact())
-                    return
-                await msg.answer(text=f"🎉 Ласкаво просимо, {msg.from_user.first_name}!✨\n\nДля перевірки броні\nнатисніть кнопку 👇🏻👇🏻👇🏻",
-                                 reply_markup=get_armor(chat_id))
-                return
             if user_data[3] == "moderator":
                 await msg.answer(text=f"Добро пожаловать {msg.from_user.first_name}!\n\n",
                                  reply_markup=order_accepted())
+                return
+            if user_data[3] == "client":
+                if user_data[4] == '':
+                    await msg.answer(text='Щоб побачити свою бронь Натисніть кнопку 📲 Надіслати свій контакт кнопка в меню 👇 👇 👇',
+                                     reply_markup=get_contact())
+                    return
+                await msg.answer(text=f"🎉 Ласкаво просимо, {msg.from_user.first_name}!✨\n\nДля перевірки броні\nнатисніть кнопку 👇🏻👇🏻👇🏻",
+                                 reply_markup=get_armor(new_chat_id))
                 return
             logger.debug("Вы уже зарегистрированы в системе.")
             return
 
         # Добавляем пользователя с ролью по умолчанию
         result = db.add_user(
-            chat_id=chat_id,
+            chat_id=new_chat_id,
             chat_id_name=username,
             role="client",  # Роль по умолчанию
             clients_telephone=""
         )
+
         if result:
             logger.debug("Вы успешно зарегистрированы!")
             await msg.answer(text='Щоб побачити свою бронь Натисніть кнопку 📲 Надіслати свій контакт кнопка в меню 👇 👇 👇',
@@ -70,15 +66,6 @@ async def start_handler(msg: Message):
 
 
 @logger.catch
-async def status_orders(data_id, data_status):
-    order_patch = {"status": f"{data_status}"}
-    x = requests.patch(f'{getenv("API")}/api/v1/orders/{data_id}/',
-                       json=order_patch, headers=headers)
-    logger.debug(x.status_code)
-    return order_patch
-
-
-@logger.catch
 @router.callback_query()
 async def callbacks_all_trip(callback: types.CallbackQuery):
     """ Обработка callback Данных """
@@ -86,6 +73,14 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
     order_id = callback.data.split("_")[1]
     status = callback.data.split("_")[0]
     order_id.zfill(4)
+    STATUS = (
+        ('ordersent', '✉️ Надіслано'),
+        ('accepted', '✅ Прийнято'),
+        ('completed', '🛍 Виконано'),
+        ('cancel', '❌ Скасовано'),
+    )
+    STATUS_DICT = dict(STATUS)
+
     if callback.data == f"accepted_{order_id}":
 
         await status_orders(order_id, status)
@@ -103,14 +98,30 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
         if exists:
             if user_data[3] == "client":
                 logger.debug(user_data)
-                order, order_data = db.get_orders(clients_telephone=user_data[4])
+                order, order_data = db.get_orders(
+                    clients_telephone=user_data[4])
                 logger.debug(order_data)
                 if order:
-                    # Вы отримуйте
-                    id, address_exchanger,  currency_name, buy_or_sell, exchange_rate, order_sum = f"{order_data[0]}".zfill(4), order_data[3], order_data[4], order_data[5], order_data[6], order_data[7]
-                    send_order = f"🛎 <b>Ваше замовлення</b> {id}\n\n🏦{address_exchanger}\n{currency_name} \n🫳{buy_or_sell} по {exchange_rate} \nCума <b>{order_sum}</b>\n\n"
-                    await callback.bot.send_message(chat_id=callback.from_user.id, text=send_order)
+                    count = 1
+                    for orders in order_data:
 
+                        # Вы отримуйте
+                        id, status, address_exchanger,  currency_name, buy_or_sell, exchange_rate, order_sum = f"{orders[0]}".zfill(
+                            4), orders[1], orders[3], orders[4], orders[5], orders[6], orders[7]
+                        logger.debug(
+                            f'Ви отримаєте на руки {exchange_rate * order_sum}')
+                        text = "\n\n🕒 Бронь дійсна: до 90 хвилин \n\n👉 Приходьте до зазначеного пункту та покажіть це повідомлення оператору."
+                        send_order = f"🔐 {count} <b> Ваша бронь:</b> {id} \nСтатус: {STATUS_DICT[f'{status}']}\n\n💱 Валюта: {currency_name} \n \
+                        💵 Сума: <b>{order_sum}</b>\n📍 Пункт обміну: {address_exchanger}\n🫳{buy_or_sell} по {exchange_rate} {text}"
+                        await callback.bot.send_message(chat_id=callback.from_user.id, text=send_order)
+
+                        count += 1
+
+                else:
+                    book_course = f"<a href='{API_BASE}?utm_source=telegram&utm_medium=privat_obmen_bot&utm_campaign=link&utm_id=link'>Забронювати курс</a>"
+                    await callback.bot.send_message(chat_id=callback.from_user.id,
+                                                    text=f"ℹ️ Якщо ви не бачите свою броню, то ваш номер телефону в телеграмі не співпадає з номером телефону броні.\n\n\nЗабронюйте курс за вигідним значенням — і ми зафіксуємо його на зручний для вас час.\n👇👇👇\n\n {book_course}")
+                    # text=f"ℹ️ Якщо ви не бачите свою броню, то ваш номер телефону в телеграмі не співпадає з номером телефону броні.\n\nЗв'яжіться з Менеджером\n📲 0967228090  @PrivatObmenOd\n\nЗабронюйте курс за вигідним значенням — і ми зафіксуємо його на зручний для вас час.\n👇👇👇\n\n {book_course}")
 
     if callback.data == f"cancel_{order_id}":
         await status_orders(order_id, status)
@@ -123,46 +134,32 @@ async def callbacks_all_trip(callback: types.CallbackQuery):
         await callback.bot.edit_message_text(chat_id=callback.from_user.id, text=f"✅ Виконано замовлення №{order_id.zfill(4)}", message_id=callback.message.message_id)
         logger.debug(f'{order_id} {callback.from_user}')
 
-all_orders =f"<a href='{getenv('API')}/admin/currency/orders/'>Все заказы</a>"
-
+all_orders = f"<a href='{API_BASE}/admin/currency/orders/'>Все заказы</a>"
 
 
 @router.message(F.text == "ℹ️ Прийняте замовлення")
-async def ger_accepted_(message: types.Message):
+async def get_accepted(message: types.Message):
     help_text = f"💬 <b>В даном разделе Вы увитите принятые заказы:</b>\n\n1 В случии если клиент не пришол за бронью - Менаджер нажимает на кнопку под заказом Отменить.\n2 В случии если клиент пришол за бронью - Менаджер вибирает кнопку Заказ виполнен\n {all_orders}"
 
     await message.answer(text=help_text)
-    res = requests.get(get_status)
-    data = res.json()
-    orders = data.get('objects')
+    isorder, order_data = db.get_orders_status(status="accepted")
     count = 1
-    logger.debug(orders)
-    if orders:
-        for order in orders:
-            id = f"{order.get('id')}".zfill(4)
-            send_order = f"🏷 {count} <b>Прийняте замовлення</b> {id}\n\n🏦{order.get('address_exchanger')}\n{order.get('currency_name')} \n🫳{order.get('buy_or_sell')} по {order.get('exchange_rate')} \nCумма <b>{order.get('order_sum')}</b>\n\n📲{order.get('сlients_telephone')}"
-            get_id = order.get('id')
+    # logger.debug(order_data)
+    if isorder:
+        for order in order_data:
+            # logger.debug(order)
+            id = str(order[0])
+            send_order = f"🏷 {count} <b>Прийняте замовлення</b> {id.zfill(4)}\n\n🏦{order[3]}\n{order[4]} \n🫳{order[5]} по {order[6]} \nCумма <b>{order[7]}</b>\n\n📲{order[2]}"
+            get_id = order[0]
             await message.answer(text=send_order,  reply_markup=kb_status_order(get_id))
             count += 1
-    if orders == []:
+    else:
         await message.answer(text='Немає Прийнятих замовлень')
 
 
-
-
-
-@router.message(lambda message: message.text.startswith("Какой курс USD установлен❓"))
-async def get_corr(message: types.Message):
-    usd = get_usd_currency()
-    diff_buy, diff_sell = get_difference()
-    corr_buy, corr_sell = get_correction()
-    await message.answer(f"Установлен Курс\n<b>USD={diff_buy}/{diff_sell}</b>\nразница {corr_buy}/{corr_sell}")
-    if diff_buy == '':
-        await message.answer(f'Что установить Курс введите в поле сообщение.\nПример: USD={usd.get("buy")}/{usd.get("sell")}')
-
 def get_usd_currency():
     try:
-        response = requests.get(f'{getenv("API")}/api/v1/currencys/')
+        response = requests.get(f'{API_BASE}/api/v1/currencys/')
         response.raise_for_status()  # Проверка наличия ошибок
         # Обработка ответа
     except requests.exceptions.RequestException as e:
@@ -174,54 +171,172 @@ def get_usd_currency():
         return usd
 
 
-@router.message(lambda message: message.text.startswith("USD="))
+@router.message(F.text.startswith("USD="))
 async def setDifference(message: types.Message):
-    chat_id = get_users_data(role="moderator")
-    if chat_id == message.from_user.id:
-       usd = get_usd_currency()
+    chat_id = orders.get_users_data(role="moderator")
+    logger.debug(f'{chat_id=} {message.from_user.id=}')
 
-       if usd.get("code") == "usd":
-            _buy, _sell = get_correction()
+    if message.from_user.id == int(chat_id) or message.from_user.id == int(ADMIN_CHAT_ID):
 
-            try:
-                data = message.text.split('=')[1].strip()
-                buy_str, sell_str = data.split('/')
-                diff_buy = (Decimal(usd.get("buy")) + _buy) - Decimal(buy_str)
-                diff_sell = (Decimal(usd.get("sell")) + _sell) - Decimal(sell_str)
-                set_difference(buy_str, sell_str)
-                set_correction(buy_str=diff_buy, sell_str=diff_sell)
-                await message.answer(f'✅ Курс USD - Долар установлен {buy_str}/{sell_str}\n✅Разница составляет {diff_buy}/{diff_sell}\n\nКурс нового доллара minfin {(Decimal(usd.get("buy")) + _buy)} / {(Decimal(usd.get("sell")) + _sell)}')
-            except Exception as e:
-                logger.debug(e)
-                await message.answer(f'❌ Неверный формат. Пример: USD={usd.get("buy")}/{usd.get("sell")}')
+        try:
+            data = message.text.split('=')[1].strip()
+            buy_str, sell_str = data.split('/')
 
+            if await update_currency_usd(Decimal(buy_str), Decimal(sell_str)):
+                await message.answer(f'✅ Курс USD - Долар установлен {buy_str}/{sell_str}')
+
+        except Exception as e:
+            logger.debug(e)
+            await message.answer(f'❌ Неверный формат. Пример: USD=41.25/41.50')
 
 
 @router.message(F.text == "on_order_send_message")
 async def echo_handler(message: types.Message):
     logger.info(message.text)
-    chat_id = get_users_data(role="moderator")
-    logger.info(chat_id)
-    await orders.order_send_message(chat_id)
+    await orders.order_send_message()
 
-
-def get_users_data(role: str):
-    """Проверяем роль"""
-    res, user_data = db.exists_role(role)
-    if res:
-        return user_data[1]
 
 @router.message(F.text == "on_post_db")
-async def echo_handler(msg: types.Message):
+async def fun_bot(msg: types.Message):
     logger.info(msg.text)
     await post_db.post_db()
 
+
+async def get_api_rate(currency: str):
+    """
+    Ожидаемый ответ API:
+    {
+      "objects": [
+        {
+          "code": "usd",
+          "buy": "42.10",
+          "sell": "42.25"
+        }
+      ]
+    }
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(API_URL_CURRENCYS, timeout=10) as resp:
+                if resp.status != 200:
+                    logger.error(f"API error {resp.status}")
+                    return None
+
+                data = await resp.json()
+
+                if "objects" not in data:
+                    logger.error("objects not found in API")
+                    return None
+
+                for item in data["objects"]:
+                    if item.get("code", "").lower() == currency.lower():
+                        return {
+                            "buy": float(item["buy"]),
+                            "sell": float(item["sell"])
+                        }
+
+                return None
+
+    except Exception as e:
+        logger.error(f"API request failed: {e}")
+        return None
+
+
+@router.channel_post()
+async def channel_handler(msg: types.Message):
+    text = msg.text or ""
+    usd_match = USD_PATTERN.search(text)
+    logger.debug(text)
+    if not usd_match:
+        return None
+
+    buy = usd_match.group(1)
+    sell = usd_match.group(2)
+
+    await update_currency_usd(Decimal(buy), Decimal(sell))
+
+
 @router.message()
 async def echo_handler(msg: types.Message):
+    text = msg.text.strip().lower()
+
+    logger.info(text)
+
+    match = PATTERN.match(text)
+    if not match:
+        return  # не похоже на нашу команду — молчим
+
+    amount = int(match.group(1))
+    currency = match.group(2)
+    rate = float(match.group(3).replace(',', '.'))
+
+    # -------------------------
+    # Определяем currency code
+    # -------------------------
+    if "син" in text:
+        currency = "usdnew"
+    elif B_PATTERN.search(text):
+        currency = "usd"
+    elif EUR_PATTERN.search(text):
+        currency = "eur"
+    else:
+        logger.debug("⚠️ Не смог определить валюту")
+        # await msg.reply("⚠️ Не смог определить валюту")
+        return
+
+    logger.debug(
+        f"Parsed → amount={amount}, currency={currency}, rate={rate}")
+
+    api = await get_api_rate(currency)
+
+    if api is None:
+        # await msg.reply("⚠️ Не удалось получить курс из API")
+        logger.debug("⚠️ Не удалось получить курс из API")
+        return
+
+    # защита от плавающей точки
+    EPS = 0.001
+    is_valid = False
+    success_msg = ""  # Переменная для текста успеха
+
+    # Логика:
+    # минус  → Каса продает → проверяем SELL
+    # плюс   → Каса покупает → проверяем BUY
+    if amount < 0:
+        expected = api["sell"]
+        direction = "Продажа"
+        # Для продажи: если курс БОЛЬШЕ или равен API, это ОК
+        if rate >= expected - EPS:
+            is_valid = True
+            success_msg = "✅ ОК, отличная продажа"
+    else:
+        expected = api["buy"]
+        direction = "Покупка"
+        if rate <= expected + EPS:
+            is_valid = True
+            success_msg = "✅ ОК, отличная покупка"
+
+    if is_valid:
+        await msg.reply(success_msg)
+        logger.debug(success_msg)
+    else:
+        # await msg.reply(
+        #     f"❌ Нет, {direction}: {expected}"
+        # )
+        logger.debug(f"❌ Нет, {direction}: {expected}")
 
     if msg.contact:
-            db.update_phone_user(chat_id=msg.from_user.id, clients_telephone=msg.contact.phone_number)
-            await msg.answer(f"Дякуємо за ваш номер \n📲{msg.contact.phone_number}",
-                                 reply_markup=ReplyKeyboardRemove())
-            await msg.answer(text=f"✨ Ласкаво просимо!\n\n {msg.from_user.first_name} Для перевірки броні\nнатисніть кнопку 👇🏻👇🏻👇🏻",
-                                 reply_markup=get_armor(msg.from_user.id))
+        telephone = msg.contact.phone_number
+
+        if telephone[0] == '+':
+            telephone = telephone[1:]
+
+        db.update_phone_user(
+            chat_id=str(msg.from_user.id),
+            clients_telephone=telephone
+        )
+
+        await msg.answer(f"Дякуємо за ваш номер \n📲{msg.contact.phone_number}",
+                         reply_markup=ReplyKeyboardRemove())
+        await msg.answer(text=f"✨ Ласкаво просимо!\n\n {msg.from_user.first_name} Для перевірки броні\nнатисніть кнопку 👇🏻👇🏻👇🏻",
+                         reply_markup=get_armor(str(msg.from_user.id)))

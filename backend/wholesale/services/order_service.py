@@ -13,7 +13,9 @@ class OrderService:
         order_type,
         amount_currency,
         rate=None,
-        comment=""
+        amount_base=None,
+        comment="",
+        base_currency=None
     ):
 
         if order_type in {"buy", "sell"} and not rate:
@@ -31,11 +33,11 @@ class OrderService:
             amount_currency=amount_currency,
             rate=rate,
             amount_base=amount_base,
-            comment=comment
+            comment=comment,
+            base_currency=base_currency,
         )
-
-        # обновляем баланс
-        BalanceService.apply_order(order)
+        # обновляем баланс с информацией о версии базовой валюты
+        BalanceService.apply_order(order, base_currency=base_currency)
 
         # # 🔴 обновляем dashboard
         broadcast_balance(

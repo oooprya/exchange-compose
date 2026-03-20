@@ -1,7 +1,7 @@
-import requests
 import json
 import requests
 from bs4 import BeautifulSoup
+from typing import Optional
 from decimal import Decimal
 from aiogram import Bot
 from aiogram.enums import ParseMode
@@ -10,116 +10,76 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 from pytz import timezone
 from datetime import datetime
-from os import getenv
 
-url_currencys = f'{getenv("API")}/api/v1/currencys/?limit=100'
-headers = {"Authorization": f"ApiKey {getenv('API_KEY')}"}
+from services.formatter import format_currency_row
+from services.constants import EXCHANGER_NOVYI_RYNOK, DISCOUNT_EUR, DISCOUNT_USD, DISCOUNT_USD_NEW
+
+
+from config import API_URL_CURRENCYS, HEADERS, PARSER_EXCHANGER, EXPRIVATUA, ADMIN_CHAT_ID, TELEGRAM_TOKEN, API_BASE, TRADE_PATTERN
 
 
 now = datetime.now(timezone('Europe/Kiev'))
 # Список часов, в которые нужно отправлять сообщения
 target_hours = list(range(9, 20))  # от 9 до 19 включительно
-minute_condition = (now.hour == 8 and now.minute == 45) or (now.hour in target_hours and now.minute == 0)
-
-private_obmen = getenv("PRIVATE_OBMEN")
-exprivatUa = getenv("EXPRIVATUA")
 
 
+NOVYI_RYNOK = '/obmen/markevicha-32-novyi-rynok'
+MELNYTSKA = '/obmen/melnytska-1-tavriya-v'
 UTM_ALL_KURS = '?utm_source=telegram&utm_medium=private_obmen&utm_campaign=all_kurs'
 UTM_RESERV = '?utm_source=telegram&utm_medium=private_obmen&utm_campaign=reserv&utm_id=reserv'
 
 
-# Глобальная переменная
-diff_buy = Decimal('0.10')
-diff_sell = Decimal('0.10')
-
-set_diff_buy = ''
-set_diff_sell = ''
-
-
-def set_correction(buy_str, sell_str):
-    global diff_buy, diff_sell
-    diff_buy = buy_str
-    diff_sell = sell_str
-
-def set_difference(buy_str, sell_str):
-    global set_diff_buy, set_diff_sell
-    set_diff_buy, set_diff_sell = buy_str, sell_str
-
-def get_difference():
-    return set_diff_buy, set_diff_sell
-
-def get_correction():
-    return diff_buy, diff_sell
-
-
 @logger.catch
-def add_course():
-    """Добавляем курс на сайт"""
-    data_api = get_api_data(f'{getenv("API")}/api/v1/currency?limit=50')
-    total_count = get_api_data(f'{getenv("API")}/api/v1/exchangers/')
+def apply_discount(code: str, buy: Decimal, exchanger: str) -> Decimal:
+    if exchanger[-2] != EXCHANGER_NOVYI_RYNOK:
+        return buy
 
-    exchanger_id = 1
-    currency_id = 1
-    for curr in range(total_count["meta"]["total_count"]):
+    if code == "usd":
+        return buy - DISCOUNT_USD
+    if code == "usdnew":
+        return buy - DISCOUNT_USD_NEW
+    if code == "eur":
+        return buy - DISCOUNT_EUR
 
-        for curr in parser_exchanger():
-            for curr_api in data_api["objects"]:
-
-                if curr['currency'] == curr_api['code']:
-                    currency = {
-                        "buy": curr['buy'],
-                        "currency": f"/api/v1/currency/{curr_api['id']}/",
-                        "exchanger": f"/api/v1/exchangers/{exchanger_id}/",
-                        "sell": curr['sell'],
-                        "sum": 100000
-                    }
-                    x = requests.post(f'{getenv("API")}/api/v1/currencys/',
-                                      json=currency,
-                                      headers=headers)
-                    logger.debug(x.status_code)
-                    logger.debug(
-                        f"exchanger_id {exchanger_id } / {curr_api['id']} / {curr_api['code']} buy {curr['buy']}  sell {curr['sell']}")
-            currency_id += 1
-            logger.debug(curr['currency'])
-        exchanger_id += 1
+    return buy
 
 
 @logger.catch
 async def send_currency(new_text):
-    bot = Bot(token=getenv("TOKEN"), default=DefaultBotProperties(
+    bot = Bot(token=TELEGRAM_TOKEN, default=DefaultBotProperties(
         parse_mode=ParseMode.HTML))
+
     async with bot.session:  # or `bot.context()`
         main_kb = InlineKeyboardMarkup(inline_keyboard=[
             [
-                InlineKeyboardButton(text="💱 Курс всіх валют",
-                                     url=f'{getenv("API")}{UTM_ALL_KURS}',
-                                     callback_data="event")
-            ],
-            [
                 InlineKeyboardButton(text="🛎 Забронювати курс",
-                                     url=f'{getenv("API")}{UTM_RESERV}',
+                                     url=f'{API_BASE}{UTM_RESERV}',
                                      callback_data="event")
             ]
         ],)
 
-        await bot.send_message(chat_id=exprivatUa,
-                            text=new_text,
-                            reply_markup=main_kb)
+        await bot.send_message(chat_id=EXPRIVATUA,  # int(ADMIN_CHAT_ID) chat_id=EXPRIVATUA
+                               text=new_text,
+                               reply_markup=main_kb)
 
 
 @logger.catch
-def edit_currency(url, new_json) -> None:
+def edit_currency(url: str, payload: dict) -> None:
     """Обновляет курс на сайте patch"""
-    x = requests.patch(url, json=new_json, headers=headers)
-    logger.debug(f"{new_json} / {x.status_code}")
+    response = requests.patch(
+        url,
+        json=payload,
+        headers=HEADERS
+
+    )
+    logger.debug(f"payload={payload} {response.status_code}")
 
 
 @logger.catch
 async def status_orders(data_id, data_status):
     order_patch = {"status": f"{data_status}"}
-    x = requests.patch(f'{getenv("API")}/api/v1/orders/{data_id}/',
-                       json=order_patch, headers=headers)
+    x = requests.patch(f'{API_BASE}/api/v1/orders/{data_id}/',
+                       json=order_patch, headers=HEADERS)
     logger.debug(x.status_code)
     return order_patch
 
@@ -137,7 +97,7 @@ def get_data(url, teg: str, parser_class: str):
 @logger.catch
 def parser_exchanger():
     """ Парсим нужный обменик """
-    url = getenv("PARSER_EXCHANGER")
+    url = PARSER_EXCHANGER
 
     s = requests.Session()
     s.headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.131 Safari/537.36'
@@ -150,15 +110,17 @@ def parser_exchanger():
     new_data_pars = []
     count = 1
     for curr in data_pars:
-        add_curr = dict(id=count, currency=curr['currency'],
+        add_curr = dict(id=count,
+                        currency=curr['currency'],
                         buy=str(curr['rate']['buy']['value']
                                 ).replace(',', '.'),
-                        sell=str(curr['rate']['sell']['value']).replace(',', '.'))
+                        sell=str(curr['rate']['sell']
+                                 ['value']).replace(',', '.')
+                        )
         new_data_pars.append(add_curr)
         count += 1
 
     return new_data_pars
-
 
 
 @logger.catch
@@ -172,114 +134,197 @@ def get_api_data(api_url):
         return {}
 
 
-try:
-    data_api = get_api_data(f'{getenv("API")}/api/v1/currencys/')
-    if data_api["objects"] == []:
-        """Если в базе нет курсов"""
-        logger.debug(data_api)
-        add_course()
-except:
-    logger.debug(data_api)
-
 @logger.catch
-async def send_msg_currency():
-    pass
+async def update_currency_usd(new_buy: Decimal, new_sell: Decimal) -> bool:
+    """
+    Обновляет USD курс, если он изменился.
+    Возвращает True, если данные были обновлены.
+    """
+
+    data_api = get_api_data(API_URL_CURRENCYS)
+
+    # data_api = await get_currencies()
+    updated = False
+    message_rows: list[str] = []
+
+    for curr in data_api.get("objects", []):
+
+        current_buy = Decimal(curr["buy"])
+        current_sell = Decimal(curr["sell"])
+
+        curr_buy = curr.get("buy")
+        curr_sell = curr.get("sell")
+
+        buy_with_discount = apply_discount(
+            code=curr.get("code"),
+            buy=new_buy,
+            exchanger=curr.get("exchanger", "")
+        )
+
+        if curr.get("exchanger", "")[-2] == EXCHANGER_NOVYI_RYNOK:
+            if curr.get("code") == "usd":
+                curr_buy = apply_discount(
+                    code=curr.get("code"),
+                    buy=new_buy,
+                    exchanger=curr.get("exchanger", "")
+                )
+                curr_sell = new_sell
+
+            row, index = format_currency_row(
+                curr.get("code"),
+                str(curr_buy),
+                str(curr_sell)
+            )
+
+            if row:
+                logger.debug(
+                    f'{curr.get("code")} {curr.get("buy")} {curr.get("sell")} - {index} {row}')
+                message_rows.insert(index, row)
+
+        if curr.get("code") != "usd":
+            continue
+
+        # Если изменений нет — ничего не делаем
+        if (
+            buy_with_discount == current_buy
+            and new_sell == current_sell
+        ):
+            logger.debug(
+                f"USD без изменений: {current_buy}/{current_sell}"
+            )
+            continue
+
+        payload = {
+            "buy": str(buy_with_discount),
+            "sell": str(new_sell),
+            "updatedAt": "",
+        }
+
+        edit_currency(
+            f"{API_BASE}/api/v1/currencys/{curr['id']}/",
+            payload
+        )
+
+        updated = True
+
+    if message_rows:
+
+        # Собираем финальное сообщение
+        add_text_message = ''.join(message_rows)
+
+        new_currency = build_currency_message(
+            add_text_currency=add_text_message,
+            gold_price=None
+        )
+        await send_currency(new_currency)
+
+    return updated
+
 
 @logger.catch
 async def update_course(data_pars):
     """Обновляем курс если курс не равен текущему"""
-    get_currency = []
-    gold = get_data(getenv("URL_GOLD"), "div",
-                    'nd-fq-last-container nd-fq-last')
 
-    # Задаем значения
-    divisor = 31.11
-    percentage = 6.5 / 100  # Преобразуем процент в десятичную дробь
+    data_api = get_api_data(API_URL_CURRENCYS)
 
-
-    # Выполняем расчет
-    result = (float(gold) / divisor) * (1 + float(percentage))
-
-    data_api = get_api_data(url_currencys)
-    correction_value = get_correction()
-
-    currency_map = {
-        'usd': ("🇺🇸 🇺🇦 USD: {buy} / {sell}\n", 1),
-        'eur': ("🇪🇺 🇺🇦 EUR: {buy} / {sell}\n", 2),
-        'usd-eur': ("🇺🇸 🇪🇺 $/€: {buy} / {sell}\n", 3),
-        'gbp-usd': ("🇺🇸 🇬🇧 $/£: {buy} / {sell}\n", 4),
-        'chf-usd': ("🇺🇸 🇨🇭 $/₣: {buy} / {sell}\n\n", 5),
-        'gbp': ("🇬🇧 🇺🇦 GBP: {buy} / {sell}\n", 6),
-        'chf': ("🇨🇭 🇺🇦 CHF: {buy} / {sell}\n", 7),
-        'pln': ("🇵🇱 🇺🇦 PLN: {buy} / {sell}\n", 8),
-        'ron': ("🇷🇴 🇺🇦 RON: {buy} / {sell}\n", 9),
-        'mdl': ("🇲🇩 🇺🇦 MLD: {buy} / {sell}\n", 10),
-        'cad': ("🇨🇦 🇺🇦 CAD: {buy} / {sell}\n", 11),
-        'nok': ("🇳🇴 🇺🇦 NOK: {buy} / {sell}\n", 12),
-    }
-    flag = False
     for curr in data_pars:
         for curr_api in data_api["objects"]:
 
-            if curr['currency'] == curr_api['code']:
+            curr_code = curr_api['code']
+
+            if curr['currency'] == curr_code or f"{curr['currency']}new" == curr_code:
+
                 if curr['buy'] != curr_api['buy'] or curr['sell'] != curr_api['sell']:
-                    logger.debug(f"{curr_api['id']} {curr_api['code']} buy {curr['buy']} = {curr_api['buy']} sell {curr['sell']} = {curr_api['sell']}")
 
-                    if curr_api['code'] == 'usd':
-                        new_buy = Decimal(curr['buy']) - correction_value[0]
-                        new_sell = Decimal(curr['sell']) - correction_value[1]
+                    logger.debug(
+                        f"{curr_api['id']} {curr_code} minfin {curr['buy']}/{curr['sell']} -> сайт {curr_api['buy']}/{curr_api['sell']}")
 
-                        logger.debug(f"{correction_value[0]}   {correction_value[1]}")
-                        logger.debug(f"{curr_api['buy']} - {new_buy} / {new_sell} - {curr_api['sell']}")
+                    new_buy = curr['buy']
+                    new_sell = curr['sell']
 
-                        if new_buy == Decimal(curr_api['buy']) and new_sell == Decimal(curr_api['sell']):
-                            break
+                    if curr_code != 'usd':
+
+                        new_buy = apply_discount(
+                            curr_api['code'],
+                            Decimal(curr['buy']),
+                            curr_api['exchanger']
+                        )
 
                         ed_curr = {
-                            "buy": f"{new_buy}",
-                            "sell": f"{new_sell}",
+                            "buy": str(new_buy),
+                            "sell": str(new_sell),
                             "updatedAt": ""
                         }
-                    else:
-                        ed_curr = {
-                            "buy": f"{curr['buy']}",
-                            "sell": f"{curr['sell']}",
-                            "updatedAt": ""
-                        }
-                    edit_currency(f'{getenv("API")}/api/v1/currencys/{curr_api["id"]}/', ed_curr)
 
-                    if curr_api['code'] == 'usd' or curr_api['code'] == 'eur':
-                        flag = True
+                        edit_currency(
+                            f'{API_BASE}/api/v1/currencys/{curr_api["id"]}/', ed_curr)
+
+    # logger.info(f"{add_text_currency}")
+
+    # new_currency = build_currency_message(
+    #     usd_white_row=usd_white_row,
+    #     add_text_currency=add_text_currency,
+    #     gold_price=result,  # или None если золото временно не нужно
+    # )
+
+    # if flag:
+    #     await send_currency(new_currency)
 
 
-        # Добавляем строку для Telegram
-        formatted_str, index = currency_map.get(curr['currency'], (None, None))
-        if formatted_str:
-            if index == 1:
-                # Обновляем словарь curr, чтобы новые значения использовались в сообщении
-                get_currency.insert(index, formatted_str.format(
-                    buy=new_buy,
-                    sell=new_sell
-                ))
-            else:
-                get_currency.insert(index, formatted_str.format(
-                    buy=curr['buy'],
-                    sell=curr['sell']
-                ))
+def build_currency_message(
+    add_text_currency: str,
+    gold_price: Optional[float] = None,
+) -> str:
+    """
+    Формирует итоговое сообщение с курсами валют для Telegram.
+    """
 
-    # Собираем финальное сообщение
-    add_text_currency = ''.join(get_currency)
-
-    new_currency = (
-        f"<b>💰 Курс від 500$/€/£/₣</b>\n\n{add_text_currency}"
-        f"🥇 🇺🇸 GOLD {float(round(result, 2)) - 4} / {round(result, 2)} $/g\n\n"
-        "⚠️ На купюри номіналом 1, 2, 5, 10, 20, 50 $ оптовий курс не діє\n\n"
-        "💵 Приймаємо зношенi купюри з min%\n\n"
-        "Менеджер\n📲 0967228090  @PrivatObmenOd\n\n"
-        "Індивідуальні пропозиції, якість обслуговування :\n"
-        "Керівник\n📲 0634765088  @VitalikPrivat"
+    message = (
+        "<b>💰 Курс від 500$/€/£/₣</b>\n"
+        f"{add_text_currency}"
     )
 
-    if flag or minute_condition:
-        await send_currency(new_currency)
-        logger.debug(now.strftime("%H:%M:%S"))
+    # 🥇 Золото — опционально
+    if gold_price is not None:
+        message += (
+            f"🥇 🇺🇸 GOLD {float(round(gold_price, 2)) - 4} / "
+            f"{round(gold_price, 2)} $/g\n\n"
+        )
+
+    # ⚠️ Информационный блок
+    message += (
+        "\n⚠️ На купюри номіналом 1, 2, 5, 10, 20, 50 $ оптовий курс не діє\n\n"
+        "💵 Приймаємо зношенi купюри з min%\n\n"
+        "Звертайтесь за номером телефону:\n"
+        "📲 0634765088  @VitalikPrivat"
+    )
+
+    return message
+
+
+def parse_trade_message(text: str) -> list[dict]:
+
+    trades = []
+
+    for sign, amount, curr, color, rate in TRADE_PATTERN.findall(text):
+        amount = int(amount)
+        rate = Decimal(rate)
+
+        operation = "buy" if sign == "+" else "sell"
+
+        # currency code
+        if curr in ("дол", "usd"):
+            currency = "usdnew" if color == "син" else "usd"
+        elif curr in ("евро", "eur"):
+            currency = "eur"
+        else:
+            continue
+
+        trades.append({
+            "amount": amount,
+            "currency": currency,
+            "rate": rate,
+            "operation": operation,
+        })
+
+    return trades

@@ -88,6 +88,7 @@ button:hover {
 
 .flash-update {
     animation: flashUpdate 0.8s ease-out;
+    animation-iteration-count: 2, 1;
 }
 
 @keyframes flashUpdate {
@@ -103,11 +104,12 @@ button:hover {
 @media screen and (max-width: 576px) {
 .result_orders_list{
         overflow: auto;
-        height: calc(80vh - 70px);
+        height: calc(80vh - 100px);
     }
 
 #balance-overlay {
     background-color: hwb(0deg 0% 100% / 40%);
+    border-radius: 1rem;
 }
 
 .translate-x-full {

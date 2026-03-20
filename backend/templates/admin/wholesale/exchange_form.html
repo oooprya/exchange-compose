@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load static %}
 
 {% block content %}
 <h2 class="text-2xl font-bold text-emerald-600">
@@ -19,12 +20,17 @@
                 <label class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark required">Валюта:</label>
                 <select name="currency" id="currency"  class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full pr-8! max-w-2xl appearance-none text-ellipsis ">
                     {% for currency in currencies %}
-                        <option value="{{ currency.id }}">{{ currency.name }}</option>
+                        <option value="{{ currency.id }}" data-code="{{ currency.code }}">{{ currency.name }}</option>
                     {% endfor %}
                 </select>
             </div>
+            <div class="lg:w-1/4 w-full" id="base-currency-select-wrapper" style="display: none;">
+                <label id="base-currency-label-text">Версія валюти:</label>
+                <select name="base_currency" id="base_currency" class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full pr-8! max-w-2xl appearance-none text-ellipsis ">
+                </select>
+            </div>
             <div class="mt-2 text-sm text-gray-600">
-                Текущий баланс:
+                Текущий баланс <span id="balance-currency-label"></span>:
                 <span id="current-balance" class="font-bold text-lg">0</span>
             </div>
         </div>
@@ -32,19 +38,24 @@
         <div class="flex flex-col lg:flex-row gap-10 items-center">
             <div class="lg:w-1/4 w-full">
                 <label class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark required">Сумма:</label>
-                <input class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full max-w-2xl  " type="number" step="0.01" name="amount" id="amount" required>
+                <input class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full max-w-2xl" type="number" step="0.01" name="amount" id="amount" required>
+                <p id="amount-error" class="text-red-600 text-xs mt-1" style="display: none;"></p>
             </div>
 
             {% if not is_movement %}
             <div class="lg:w-1/4 w-full">
                 <label class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark required">Курс:</label>
-                <input type="number" step="0.01" name="rate" id="rate" required class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full max-w-2xl ">
+                <input type="number" step="0.001" name="rate" id="rate" required class="border border-base-200 bg-white font-medium min-w-20 placeholder-base-400 rounded shadow-xs text-font-default-light text-sm focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 group-[.errors]:border-red-600 focus:group-[.errors]:outline-red-600 dark:bg-base-900 dark:border-base-700 dark:text-font-default-dark dark:group-[.errors]:border-red-500 dark:focus:group-[.errors]:outline-red-500 dark:scheme-dark group-[.primary]:border-transparent disabled:!bg-base-50 dark:disabled:!bg-base-800 px-3 py-2 w-full max-w-2xl ">
             </div>
             
          </div>
 
          <div class="border-t items-center flex flex-row gap-4 p-3 py-2.5 mt-6 dark:bg-base-800 dark:border-base-700 2xl:border-t-0! 2xl:bg-transparent! 2xl:px-0">
-            <p>Эквивалент UAH:  <span id="uah_result" class="text-2xl font-semibold text-important tracking-tight max-w-2xl lg:text-3xl">0</span> Гривен</p>
+            <!-- Для обычных курсов - эквивалент в UAH -->
+            <p id="uah-equiv" style="display: none;">Эквивалент UAH:  <span id="uah_result" class="text-2xl font-semibold text-important tracking-tight max-w-2xl lg:text-3xl">0</span> Гривен</p>
+            
+            <!-- Для кроссовых курсов - эквивалент в базовой валюте -->
+            <p id="cross-equiv" style="display: none;">Эквивалент <span id="base-currency-label">USD</span>:  <span id="cross_result" class="text-2xl font-semibold text-important tracking-tight max-w-2xl lg:text-3xl">0</span> <span id="base-currency-code">USD</span></p>
          </div>
          {% endif %}
 
@@ -71,56 +82,8 @@
     </form>
 </div>
 </div>
-<script>
-
-
-document.addEventListener("DOMContentLoaded", function() {
-
-    const currencyField = document.querySelector("[name='currency']");
-    const balanceEl = document.getElementById("current-balance");
-
-    const balanceUrl = "{% url 'admin:wholesale_get_balance' %}";
-
-    function loadBalance(currencyId) {
-        fetch(`${balanceUrl}?currency=${currencyId}`)
-            .then(response => response.json())
-            .then(data => {
-                balanceEl.innerText = Number(data.balance).toLocaleString();
-            })
-            .catch(err => console.error(err));
-    }
-
-    if (currencyField) {
-        currencyField.addEventListener("change", function() {
-            loadBalance(this.value);
-        });
-
-        if (currencyField.value) {
-            loadBalance(currencyField.value);
-        }
-    }
-
-});
-
-
-const amountInput = document.getElementById("amount");
-const rateInput = document.getElementById("rate");
-const result = document.getElementById("uah_result");
-
-function calculate() {
-    const amount = parseFloat(amountInput.value) || 0;
-    const rate = parseFloat(rateInput.value) || 0;
-    const total = amount * rate;
-    // Форматируем число
-    result.innerText = total.toLocaleString('ru-RU', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-}
-
-amountInput.addEventListener("input", calculate);
-rateInput.addEventListener("input", calculate);
-</script>
+<div id="exchange-form-config" data-balance-url="{% url 'admin:wholesale_get_balance' %}" style="display:none;"></div>
+<script src="{% static 'admin/js/exchange_form.js' %}"></script>
 
 {% endblock %}
 

@@ -1,6 +1,33 @@
 {% extends "unfold/layouts/base_simple.html" %}
-{% load i18n unfold humanize %}
+{% load static i18n unfold humanize %}
 
+{% block title %}
+    {% if subtitle %}
+        {{ subtitle }} |
+    {% endif %}
+
+    {{ title }} | {{ site_title|default:_('ExPrivat') }}
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="manifest" href="{% static 'pwa/manifest.json' %}">
+<meta name="theme-color" content="#1f2937">
+<link rel="apple-touch-icon" href="{% static 'pwa/icon-192.png' %}">
+
+<link rel="stylesheet" href="{% static 'admin/custom.css' %}">
+<audio id="update-sound" preload="auto">
+    <source src="{% static 'sounds/update.mp3' %}" type="audio/mpeg" >
+</audio>
+    
+
+<script defer>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/pwa/sw.js")
+}
+</script>
+
+{% endblock %}
 
 
 {% block content %}
@@ -55,11 +82,11 @@
                         <!-- Остальные валюты -->
                         {% for b in node.balances %}
 
-                            {% if b.currency != "usd" and  b.currency != "usd-new" and  b.currency != "usd-old" %}
+                            {% if b.currency != "usd" and  b.currency != "usdnew" and  b.currency != "usdold" %}
                             <div class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded shadow-xs p-4">
                                 
                                 <div class="text-sm text-gray-500 {% if b.currency == "uah" %} text-primary-500  {% endif %}">
-                                    {{ b.currency|upper }}
+                                    {{ b.currency_name}}
                                 </div>
 
                                 <div class="text-xl font-bold"
@@ -129,16 +156,16 @@
 
 
 <script>
-{% comment %} const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
 
 const socket = new WebSocket(
     protocol + window.location.host + "/ws/dashboard/global/"
-); {% endcomment %}
- const socket = new WebSocket(
+); 
+ {% comment %} const socket = new WebSocket(
     (location.protocol === "https:" ? "wss://" : "ws://")
     + location.host
     + "/ws/dashboard/global/"
-); 
+);  {% endcomment %}
 socket.onopen = function() {
     console.log("WebSocket connected");
 };
@@ -150,7 +177,6 @@ socket.onmessage = function(event){
     updateBalances(data);
     updateUsd(data);
     updateCashier(data);
-    console.log("data:", data);
     
 } 
 
@@ -213,8 +239,8 @@ function updateUsd(data){
     const oldRow = usdOld?.closest('[data-usd-row="old"]')
 
     const totalValue = data.usd_total || 0
-    const newValue = data.balances["usd-new"] || 0
-    const oldValue = data.balances["usd-old"] || 0
+    const newValue = data.balances["usdnew"] || 0
+    const oldValue = data.balances["usdold"] || 0
 
     if(total){
         total.innerText = formatMoney(totalValue)
@@ -248,8 +274,7 @@ function updateCashier(data){
     if(!el) return;
 
     if(data.cashier){
-        console.log("data.cashier:", data.cashier);
-
+     
         el.innerText = "🕒 " + data.opened_at + " | " + data.cashier;
         phone.innerText = " 📞 " +  data.phone;
 
