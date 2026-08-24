@@ -296,7 +296,7 @@ def build_currency_message(
         "\n⚠️ На купюри номіналом 1, 2, 5, 10, 20, 50 $ оптовий курс не діє\n\n"
         "💵 Приймаємо зношенi купюри з min%\n\n"
         "Звертайтесь за номером телефону:\n"
-        "📲 0634765088  @VitalikPrivat"
+        "📲 0967228090  @PrivatObmenOd"
     )
 
     return message
