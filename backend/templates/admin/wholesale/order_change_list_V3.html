@@ -1,0 +1,801 @@
+{% extends "admin/change_list.html" %} 
+{% load i18n unfold static humanize %}
+
+{% block breadcrumbs %}    
+{% endblock %}
+
+{% block object-tools %}
+{% if current_shift %}
+  <div class="px-4 mb-2 flex flex-wrap items-center gap-2">
+    <a href="{% url 'admin:close_shift' %}"
+       class="text-sm font-semibold hover:bg-red-700"
+       title="Закрыть смену"
+       onclick="return window.confirm('ВНИМАНИЕ!\n\n\u0412\u042B \u0422\u041E\u0427\u041D\u041E \u0425\u041E\u0422\u0418\u0422\u0415 \u0421\u0424\u041E\u0420\u041C\u0418\u0420\u041E\u0412\u0410\u0422\u042C \u041E\u0422\u0427\u0415\u0422 \u0417\u0410 \u0414\u0415\u041D\u042C?');">
+      Закрыть смену
+    </a>
+  </div>
+{% endif %}
+
+    
+<button id="open-balance" class="lg:hidden px-4"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2709_2973)">
+<path d="M4.2846 15.4746L3.57031 18.3318M15.7132 15.4746L16.4275 18.3318" stroke="black" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.99916 1.42871C7.78059 1.42871 5.46059 1.42871 3.52488 1.793C3.09324 1.8746 2.69536 2.08195 2.3812 2.38899C2.06704 2.69603 1.85064 3.08906 1.75916 3.51871C1.42773 5.033 1.42773 6.42871 1.42773 8.57157C1.42773 10.7144 1.42773 12.1087 1.75916 13.6244C1.85064 14.0541 2.06704 14.4471 2.3812 14.7541C2.69536 15.0612 3.09324 15.2685 3.52488 15.3501C5.46059 15.7144 7.78202 15.7144 9.99916 15.7144C12.2163 15.7144 14.5377 15.7144 16.4734 15.3501C16.9051 15.2685 17.303 15.0612 17.6171 14.7541C17.9313 14.4471 18.1477 14.0541 18.2392 13.6244C18.5706 12.1101 18.5706 10.7144 18.5706 8.57157C18.5706 6.42871 18.5706 5.03443 18.2392 3.51871C18.1477 3.08906 17.9313 2.69603 17.6171 2.38899C17.303 2.08195 16.9051 1.8746 16.4734 1.793C14.5377 1.42871 12.2163 1.42871 9.99916 1.42871Z" fill="#FFCC00"/>
+<path d="M4.99916 7.38157V9.76157M9.99916 1.42871C7.78059 1.42871 5.46059 1.42871 3.52488 1.793C3.09324 1.8746 2.69536 2.08195 2.3812 2.38899C2.06704 2.69603 1.85064 3.08906 1.75916 3.51871C1.42773 5.033 1.42773 6.42871 1.42773 8.57157C1.42773 10.7144 1.42773 12.1087 1.75916 13.6244C1.85064 14.0541 2.06704 14.4471 2.3812 14.7541C2.69536 15.0612 3.09324 15.2685 3.52488 15.3501C5.46059 15.7144 7.78202 15.7144 9.99916 15.7144C12.2163 15.7144 14.5377 15.7144 16.4734 15.3501C16.9051 15.2685 17.303 15.0612 17.6171 14.7541C17.9313 14.4471 18.1477 14.0541 18.2392 13.6244C18.5706 12.1101 18.5706 10.7144 18.5706 8.57157C18.5706 6.42871 18.5706 5.03443 18.2392 3.51871C18.1477 3.08906 17.9313 2.69603 17.6171 2.38899C17.303 2.08195 16.9051 1.8746 16.4734 1.793C14.5377 1.42871 12.2163 1.42871 9.99916 1.42871Z" stroke="black" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.2555 10.9529C12.5682 10.9529 12.8779 10.8913 13.1668 10.7716C13.4558 10.6519 13.7183 10.4765 13.9394 10.2554C14.1606 10.0342 14.336 9.77169 14.4556 9.48276C14.5753 9.19383 14.6369 8.88416 14.6369 8.57143C14.6369 8.25869 14.5753 7.94902 14.4556 7.6601C14.336 7.37117 14.1606 7.10864 13.9394 6.8875C13.7183 6.66637 13.4558 6.49095 13.1668 6.37128C12.8779 6.2516 12.5682 6.19 12.2555 6.19M12.2555 10.9529C11.6239 10.9529 11.0182 10.702 10.5716 10.2554C10.125 9.80875 9.87406 9.20302 9.87406 8.57143C9.87406 7.93983 10.125 7.33411 10.5716 6.8875C11.0182 6.4409 11.6239 6.19 12.2555 6.19M12.2555 10.9529V12.1429M12.2555 6.19V5M14.3183 7.38143L15.3498 6.78571M9.16406 10.3571L10.1941 9.76143M14.3183 9.76143L15.3498 10.3571M9.16406 6.78571L10.1941 7.38143" stroke="black" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_2709_2973">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+</button>
+        
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+  <div id="django-messages" class="mb-4 space-y-2 fixed lg:relative top-4 left-0 transform  w-full max-w-2xl z-10 px-4">
+    {% for message in messages %}
+      {# Determine alert color by message.tags (Django messages) #}
+      <div class="relative mb-3 px-3 py-2.5 leading-[18px] rounded-default {% if "error" in message.tags %}errornote mb-3 group-[.inline-tabular]:mb-0 group-[.inline-tabular]:mt-3 group-[.inline-tabular]:mx-3 group-[.inline-stacked]:mb-3 group-[.inline-stacked]:mt-3 group-[.inline-stacked]:mx-3 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 {% elif "warning" in message.tags %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% elif "success" in message.tags %}mb-3 px-3 py-2.5 leading-[18px] rounded-default bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 {% else %}bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300{% endif %}" data-message-tags="{{ message.tags }}">
+        <button type="button" class="absolute top-2 right-2 text-sm opacity-60 hover:opacity-100" aria-label="Закрыть" onclick="this.closest('[data-message-tags]').remove()">×</button>
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const alerts = document.querySelectorAll('#django-messages [data-message-tags]');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          alert.classList.add('opacity-0', 'transition', 'duration-300');
+          setTimeout(() => alert.remove(), 300);
+        }, 5000);
+      });
+    });
+  </script>
+{% endif %}
+<div  x-data="{ changeListWidth: window.innerWidth }"
+    x-init="
+        changeListWidth = window.innerWidth;
+        window.addEventListener('resize', () => changeListWidth = window.innerWidth)
+    ">
+
+{% if needs_node_selection %}
+        {# ══════════════════════════════════════════════════════════════════════════ #}
+        {# ВЫБОР КАССЫ — перекрывает список заказов пока смена не открыта             #}
+        {# ══════════════════════════════════════════════════════════════════════════ #}
+        <div class="flex items-center mt-20" id="node-select-wrapper">
+        <div class="bg-white border flex flex-col justify-center max-w-2xl min-w-56 relative w-full
+                    leading-none py-6 -right-2 rounded shadow-lg p-6
+                    dark:bg-base-800 dark:border-base-700">
+
+            {# Заголовок #}
+            <h2 class="text-xl font-semibold mb-4">
+            Смена не открыта
+            </h2>
+
+            {# Спиннер — показывается пока идёт авто-открытие (одна касса) или после нажатия кнопки #}
+            <div id="node-spinner" class="hidden flex items-center gap-2 text-sm text-gray-500 mb-4">
+            <svg class="animate-spin h-4 w-4 text-primary-600"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10"
+                        stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            Відкриваємо зміну…
+            </div>
+
+            {# Дропдаун — скрыт если касса одна (авто-выбор) #}
+            <div id="node-select-body" class="{% if auto_select_node %}hidden{% endif %}">
+            <select id="nodeSelect"
+                    class="mb-4 border rounded px-3 py-2 w-full
+                            dark:bg-base-700 dark:border-base-600">
+                <option value="">Виберіть касу</option>
+                {% for node in available_nodes %}
+                <option value="{{ node.id }}">
+                    {{ node.name }}{% if node.exchange_point %} ({{ node.exchange_point }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+
+            {# Ошибка #}
+            <p id="node-error"
+                class="hidden text-sm text-red-600 dark:text-red-400 mb-3"></p>
+
+            <button id="openShiftBtn"
+                    onclick="openShift()"
+                    class="font-medium flex group items-center gap-2 px-3 py-2 relative
+                            justify-center whitespace-nowrap cursor-pointer px-5 py-2.5
+                            text-[14px] border border-base-200 bg-primary-600
+                            border-transparent text-white rounded w-full
+                            disabled:opacity-50 disabled:cursor-not-allowed">
+                ▶ Відкрити зміну
+            </button>
+            </div>
+
+        </div>
+        </div>
+
+        <script>
+        (function () {
+        const SELECT_URL = "{% url 'admin:wholesale_select_node' %}";
+        const CSRF       = "{{ csrf_token }}";
+
+        function showSpinner() {
+            document.getElementById("node-spinner").classList.remove("hidden");
+            document.getElementById("node-select-body").classList.add("hidden");
+        }
+
+        function showError(msg) {
+            const err = document.getElementById("node-error");
+            err.textContent = msg;
+            err.classList.remove("hidden");
+            document.getElementById("node-spinner").classList.add("hidden");
+            document.getElementById("node-select-body").classList.remove("hidden");
+            document.getElementById("openShiftBtn").disabled = false;
+        }
+
+        window.openShift = function (nodeId) {
+            if (!nodeId) {
+            const sel = document.getElementById("nodeSelect");
+            nodeId = sel ? sel.value : null;
+            }
+
+            if (!nodeId) {
+            showError("Будь ласка, оберіть касу");
+            return;
+            }
+
+            document.getElementById("openShiftBtn").disabled = true;
+            showSpinner();
+
+            fetch(SELECT_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": CSRF,
+            },
+            body: "node_id=" + encodeURIComponent(nodeId),
+            })
+            .then(r => r.json())
+            .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                showError(data.error || "Помилка відкриття зміни");
+            }
+            })
+            .catch(() => showError("Помилка мережі, спробуйте знову"));
+        };
+
+        // Одна касса — открываем автоматически сразу после загрузки страницы
+        {% if auto_select_node %}
+        document.addEventListener("DOMContentLoaded", function () {
+            showSpinner();
+            openShift({{ available_nodes.0.pk }});
+        });
+        {% endif %}
+        })();
+        </script>
+
+{% else  %}
+
+{% if current_shift or is_senior %}
+  <div class="grid lg:grid-cols-4 gap-6">
+ 
+    {# ── Левая часть ─────────────────────────────────────────────────────── #}
+    <div class="lg:col-span-3 col-span-full">
+
+ 
+        {# ── Переключатель касс для SENIOR ──────────────────────────────────── #}
+        {% if is_senior and all_nodes %}
+
+            {% if is_senior and selected_node %}
+                <h2 class="text-lg font-normal text-gray-500 ml-1 mb-4">{{ selected_node }}</h2>
+            {% endif %}
+
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+                
+        
+                {% for node in all_nodes %}
+                <a href="{% url 'admin:wholesale_wholesaleorder_changelist' %}?shift__node__id={{ node.pk }}"
+                    data-node-id="{{ node.pk }}"
+                    class="node-tab px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors
+                            {% if selected_node_id == node.pk %}
+                            bg-primary-600 text-white border-primary-600
+                            {% else %}
+                            bg-white text-gray-600 border-gray-300 hover:border-primary-400
+                            dark:bg-base-800 dark:text-gray-300 dark:border-base-600
+                            {% endif %}">
+                    {{ node.name }}
+                </a>
+                {% endfor %}
+            </div>
+
+      
+        {% endif %}
+      {# ── конец переключателя ─────────────────────────────────────────────── #}
+
+        {% if not is_senior %}
+
+            <div class="flex gap-2 justify-between items-center">
+
+                {% if selected_node %}
+                    <h2 class="text-2xl font-normal text-gray-500">{{ selected_node }}</h2>
+                {% endif %}
+                
+                <div class="flex flex-row gap-4">
+                    {% for node in available_nodes %}
+
+                        <a href="{% url 'admin:wholesale_wholesaleorder_changelist' %}?shift__node__id={{ node.pk }}"
+                        class="node-tab px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors
+                        {% if node.pk == selected_node_id %}
+                            bg-primary-600 text-white border-primary-600
+                        {% else %}
+                        bg-white text-gray-600 border-gray-300 hover:border-primary-400
+                        dark:bg-base-800 dark:text-gray-300 dark:border-base-600
+                        {% endif %}">
+                        
+                            {{ node.name }}
+                        </a>
+                    
+                    {% endfor %}
+                </div>
+                    
+            </div>
+                    
+            <div class="flex flex-row lg:flex-row-reverse px-4 gap-4 justify-between fixed w-full left-0 bottom-0 lg:relative py-4">
+                <div class="flex flex-row font-medium gap-2 md:gap-4">
+
+                    <a href="exchange/?type=in&shift__node__id={{ selected_node_id }}" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer md:px-5 md:py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded hover:bg-emerald-100">
+                        ➕ <span class="hidden lg:flex">Приход</span>
+                    </a>
+
+                    <a href="exchange/?type=out&shift__node__id={{ selected_node_id }}"
+                    class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer md:px-5 md:py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded bg-red-50 text-red-700 hover:bg-red-100">
+                        ➖ <span class="hidden lg:flex">Расход</span>
+                    </a>
+
+                    <a href="exchange/?type=add&shift__node__id={{ selected_node_id }}" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer md:px-5 md:py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded hover:bg-emerald-100">▼<span class="hidden lg:flex">Подкрепление</span></a>
+                    <a href="exchange/?type=collect" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer md:px-5 md:py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded text-blue-500 bg-blue-50">🔺<span class="hidden lg:flex">Инкассация</span></a>
+
+
+                </div>
+                <div class="flex flex-row font-medium gap-4 ">
+                    <a href="exchange/?type=buy&shift__node__id={{ selected_node_id }}" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer md:px-5 md:py-2.5 text-[14px]
+                        border border-base-200 bg-primary-600 border-transparent text-white rounded">▼ Купить (F1)</a>
+                    <a href="exchange/?type=sell&shift__node__id={{ selected_node_id }}" class="font-medium flex group items-center gap-2 px-3 py-2 relative justify-center whitespace-nowrap cursor-pointer md:px-5 md:py-2.5 text-[14px] border border-base-200 bg-white text-font-important-light dark:border-base-700 dark:bg-transparent dark:text-font-important-dark rounded 
+                    ">🔺 Продать (F2)</a>
+                </div>
+                
+            </div>
+            
+        {% endif %}
+        
+        {% block result_list %}
+        
+        <!-- Контейнер для мобильной версии -->
+        <div class="flex flex-col lg:hidden {% if not is_senior %}result_orders_list{% endif %} dark:bg-base-900">
+            {% for obj in cl.result_list %}
+            
+                
+                    <div class="{% if obj.is_reversed %}opacity-50 line-through{% endif %} border-b last:border-0 leading-none bg-gray-200 text-gray-600 py-1 flex gap-2 w-full items-center shadow dark:bg-base-900 dark:border-base-800 border-base-200">
+                    <!-- Время --> <span class="text-xs text-gray-500 font-mono"> {{ obj.created_at|date:"H:i" }} </span>
+
+                    <!-- Тип операции --> 
+                     {% if obj.order_type == "buy" %}  <span class="font-mono p-font-mono rounded bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"> к </span> 
+                     {% elif obj.order_type == "sell" %} <span class="font-mono p-font-mono rounded bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"> п </span> 
+                     {% elif obj.order_type == "in" %} <span class="font-mono p-font-mono rounded bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"> + </span> 
+                     {% elif obj.order_type == "collect" %} <span class="font-mono p-font-mono rounded bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"> ⬆ </span> 
+                     {% elif obj.order_type == "add" %} <span class="font-mono p-font-mono rounded bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"> ⬇ </span> 
+                     {% elif obj.order_type == "out" %} <span class="font-mono p-font-mono rounded bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"> - </span> {% endif %} 
+                     <!-- Валюта --> <span class="font-semibold w-10"> {{ obj.currency.code }} </span>
+
+                        <div class="text-gray-700 flex gap-2 justify-between w-full"> 
+                            <!-- IN / OUT --> 
+                            {% if obj.order_type == "in" or obj.order_type == "out" or obj.order_type == "collect" or obj.order_type == "add" %} 
+                                <span class="buy-sell text-xs">
+                                    {{ obj.amount_currency|floatformat:0  }} 
+                                </span>
+                                {% if obj.comment and is_senior %}
+                                <div class="text-xs text-blue-700 dark:text-blue-400">
+                                        {{ obj.comment }}
+                                </div>
+                                {% endif %}
+                            {% endif %} 
+                            <!-- BUY / SELL --> 
+                            {% if obj.order_type == "buy" or obj.order_type == "sell" %} 
+                                <span class="buy-sell text-xs">
+                                    {{ obj.amount_currency|floatformat:0 }}
+                                </span>
+                                <span class="rate text-xs">
+                                    {{ obj.rate.normalize }}
+                                </span>
+                                <span class="font-semibold text-xs flex-1"> 
+                                    {{ obj.amount_base.normalize }} 
+                                </span> 
+                            {% endif %} 
+                           
+                            <div class="ml-auto flex flex-wrap items-center gap-2">
+     
+                                {% if not is_senior and obj.can_reverse and not obj.is_reversed %}
+                                    <a href="{% url 'admin:reverse_order' obj.id %}"
+                                    onclick="return confirm('Сторнировать операцию?')"
+                                    class="flex text-lg items-center justify-center w-7 h-4 rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 active:scale-95 transition">
+                                        ×
+                                    </a>
+                                {% else %} 
+                                    {% if obj.is_reversed  %}
+                                        <span class="flex text-lg items-center justify-center w-7 h-4 rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 active:scale-95 transition" title="Заказ отменен">✓</span>
+                                    {% endif %}
+                                {% endif %}
+                                
+                            </div>
+                        </div>
+                       
+                        
+                    </div>
+
+    
+           
+            {% endfor %}
+        </div>
+        <!-- Стандартный вид для десктопа -->
+        <div class="hidden flex-col lg:flex">
+            {{ block.super }}
+        </div>
+        {% endblock %}
+    </div>
+
+    {# ── конец левой части ───────────────────────────────────────────────── #}
+ 
+
+    {# ── Правая часть: баланс двух касс ─────────────────────────────────────── #}
+    <div id="balance-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden"></div>
+
+    <div id="balance-drawer" 
+        class="bg-white border hidden lg:flex flex-col leading-none md:z-50 py-1 lg:translate-x-full rounded shadow-lg w-96 dark:bg-base-800 dark:border-base-700 shadow-xl transform lg:static lg:translate-x-0 lg:w-auto"
+        x-data="{ tab: 'desk_current', deskBalances: {}, safeBalances: {}, transferMode: false }"> 
+        
+        <div class="flex justify-between items-center mb-2 mx-1 px-3 py-1.5 border-b dark:border-base-700">
+            <p class="font-semibold text-gray-800 dark:text-gray-200">💰 Кассы</p>
+            <button id="close-balance" class="lg:hidden text-gray-500 hover:text-red-500">×</button>
+        </div>
+
+        {# ── Таббинг для переключения между видами ──────────────────── #}
+        <div class="flex px-3 mb-2 space-x-1 overflow-x-auto">
+            <button @click="tab = 'desk_current'" 
+                    :class="tab === 'desk_current' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 dark:bg-base-700'"
+                    class="py-1.5 px-2 text-xs font-semibold border rounded transition-colors duration-200 whitespace-nowrap">
+                🏪 Касса
+            </button>
+            <button @click="tab = 'safe_current'" 
+                    :class="tab === 'safe_current' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 dark:bg-base-700'"
+                    class="py-1.5 px-2 text-xs font-semibold border rounded transition-colors duration-200 whitespace-nowrap">
+                🔐 Сейф
+            </button>
+            <button @click="tab = 'compare'" 
+                    :class="tab === 'compare' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 dark:bg-base-700'"
+                    class="py-1.5 px-2 text-xs font-semibold border rounded transition-colors duration-200 whitespace-nowrap">
+                ⚖️ Итого
+            </button>
+            <button @click="tab = 'morning'" 
+                    :class="tab === 'morning' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 dark:bg-base-700'"
+                    class="py-1.5 px-2 text-xs font-semibold border rounded transition-colors duration-200 whitespace-nowrap">
+                📅 На утро
+            </button>
+        </div>
+
+        {# ── КАССА - текущий баланс ────────────────────────────────── #}
+        <div x-show="tab === 'desk_current'" class="flex-1 overflow-y-auto">
+            {% for b in current_balances %}
+                {% if b.node.node_type == "desk" %}
+                    <div class="flex justify-between py-2 border-b last:border-0 flex-row leading-none px-3 border-base-100 dark:border-base-700 hover:bg-gray-50 dark:hover:bg-base-700 cursor-pointer transition group" 
+                         data-currency="{{ b.currency.code }}" 
+                         data-node-type="desk"
+                         data-balance="{{ b.balance }}"
+                         @click="transferMode = true; $nextTick(() => document.getElementById('transfer-from').value = 'desk')">
+                        <span class="font-medium text-gray-600 group-hover:font-semibold">
+                            {{ b.currency.name }}
+                        </span>
+                        <span class="font-bold text-blue-600 group-hover:text-blue-700">
+                            {{ b.balance|floatformat:2 }}
+                        </span>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="text-gray-400 text-sm px-3 py-4">
+                    Нет данных по кассе
+                </div>
+            {% endfor %}
+        </div>
+
+        {# ── СЕЙФ - текущий баланс ────────────────────────────────── #}
+        <div x-show="tab === 'safe_current'" class="flex-1 overflow-y-auto">
+            {% for b in current_balances %}
+                {% if b.node.node_type == "safe" %}
+                    <div class="flex justify-between py-2 border-b last:border-0 flex-row leading-none px-3 border-base-100 dark:border-base-700 hover:bg-gray-50 dark:hover:bg-base-700 cursor-pointer transition group"
+                         data-currency="{{ b.currency.code }}" 
+                         data-node-type="safe"
+                         data-balance="{{ b.balance }}"
+                         @click="transferMode = true; $nextTick(() => document.getElementById('transfer-from').value = 'safe')">
+                        <span class="font-medium text-gray-600 group-hover:font-semibold">
+                            {{ b.currency.name }}
+                        </span>
+                        <span class="font-bold text-green-600 group-hover:text-green-700">
+                            {{ b.balance|floatformat:2 }}
+                        </span>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="text-gray-400 text-sm px-3 py-4">
+                    Нет данных по сейфу
+                </div>
+            {% endfor %}
+        </div>
+
+        {# ── СРАВНЕНИЕ обеих касс ────────────────────────────────── #}
+        <div x-show="tab === 'compare'" class="flex-1 overflow-y-auto">
+            <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase border-b bg-gray-50 dark:bg-base-900">
+                Сводка по валютам
+            </div>
+            {% for b in current_balances %}
+                {% if b.currency.code|upper not in "UAH" %}
+                    <div class="flex justify-between py-2 border-b last:border-0 flex-row leading-none px-3 border-base-100 dark:border-base-700">
+                        <span class="font-medium text-gray-600">{{ b.currency.code }}</span>
+                        <div class="flex gap-2 text-xs">
+                            <span class="text-blue-600">🏪 <span class="font-semibold">{{ b.balance|floatformat:0 }}</span></span>
+                            {# TODO: получить баланс сейфа #}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <div class="px-3 py-3 mt-2 bg-primary-50 dark:bg-primary-900/20 border-t">
+                <button onclick="openTransferModal()" class="w-full py-2 px-3 bg-primary-600 text-white rounded text-sm font-semibold hover:bg-primary-700">
+                    💸 Перевести между кассами
+                </button>
+            </div>
+        </div>
+
+        {# ── НА УТРО - утренний баланс ────────────────────────────── #}
+        <div x-show="tab === 'morning'" x-cloak class="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-base-900/50">
+            {% if morning_balances %}
+                {% for code, data in morning_balances.items %}
+                    <div class="flex justify-between py-2 border-b last:border-0 flex-row leading-none px-3 border-base-100 dark:border-base-700">
+                        <span class="font-medium text-gray-500 dark:text-gray-400">
+                            {{ data.name }}
+                        </span>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">
+                            {{ data.amount|floatformat:0 }}
+                        </span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="px-3 py-4 text-gray-400 text-sm text-center">
+                    Слепок на начало смены отсутствует
+                </div>
+            {% endif %}
+        </div>
+
+      </div>
+      {# ── конец правой части ────────────────────────────────────────────── #}
+
+    </div>
+    {# ── конец grid ──────────────────────────────────────────────────────── #} 
+
+    {% endif %}{# current_shift #}
+
+{% endif %}{# needs_node_selection #}
+
+
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ПЕРЕВОДА МЕЖДУ КАССАМИ -->
+<div id="transferModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white dark:bg-base-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">💸 Перевод между кассами</h3>
+        
+        <div class="space-y-4">
+            {# Откуда #}
+            <div>
+                <label class="block text-sm font-medium mb-2">Откуда:</label>
+                <select id="transfer-from" class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600">
+                    <option value="desk">🏪 Касса</option>
+                    <option value="safe">🔐 Сейф</option>
+                </select>
+            </div>
+
+            {# Куда #}
+            <div>
+                <label class="block text-sm font-medium mb-2">Куда:</label>
+                <select id="transfer-to" class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600">
+                    <option value="safe">🔐 Сейф</option>
+                    <option value="desk">🏪 Касса</option>
+                </select>
+            </div>
+
+            {# Валюта #}
+            <div>
+                <label class="block text-sm font-medium mb-2">Валюта:</label>
+                <select id="transfer-currency" class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600">
+                    <option value="">Выбрать валюту...</option>
+                    {% for b in current_balances %}
+                        {% if b.balance > 0 %}
+                        <option value="{{ b.currency.code }}">{{ b.currency.code }} ({{ b.currency.name }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# Сумма #}
+            <div>
+                <label class="block text-sm font-medium mb-2">Сумма:</label>
+                <input type="number" id="transfer-amount" placeholder="0.00" step="0.01" min="0" 
+                       class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600">
+                <small class="text-gray-500 dark:text-gray-400" id="transfer-available"></small>
+            </div>
+
+            {# Комментарий #}
+            <div>
+                <label class="block text-sm font-medium mb-2">Комментарий (опционально):</label>
+                <textarea id="transfer-comment" placeholder="Причина перевода..." rows="2" 
+                          class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600"></textarea>
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button type="button" 
+                    onclick="closeTransferModal()"
+                    class="flex-1 px-4 py-2 border rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-base-700">
+                Отмена
+            </button>
+            <button type="button" 
+                    onclick="confirmTransfer()"
+                    class="flex-1 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+                Перевести
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ОТМЕНЫ ЗАКАЗА -->
+<div id="reverseModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white dark:bg-base-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">Отмена заказа</h3>
+        
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Выбрать причину:</label>
+            <select id="reversalReason" class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600">
+                <option value="wrong_rate">❌ Неправильный курс</option>
+                <option value="wrong_direction">🔄 Перепутал операцию (купить/продать)</option>
+                <option value="wrong_amount">🔢 Неправильная сумма</option>
+                <option value="other">❓ Другая причина</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Комментарий (опционально):</label>
+            <textarea id="reversalComment" rows="3" class="w-full border rounded px-3 py-2 dark:bg-base-700 dark:border-base-600"></textarea>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" 
+                    onclick="closeReverseModal()"
+                    class="flex-1 px-4 py-2 border rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-base-700">
+                Отмена
+            </button>
+            <button type="button" 
+                    onclick="confirmReverse()"
+                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Отменить заказ
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────────────────────
+// УПРАВЛЕНИЕ ДВУМЯ КАССАМИ И ПЕРЕВОДАМИ
+// ────────────────────────────────────────────────────────────────────────────────
+
+function openTransferModal() {
+    const modal = document.getElementById('transferModal');
+    modal.classList.remove('hidden');
+    
+    // Очищаем форму
+    document.getElementById('transfer-amount').value = '';
+    document.getElementById('transfer-comment').value = '';
+    document.getElementById('transfer-currency').value = '';
+    document.getElementById('transfer-amount').max = 0;
+    document.getElementById('transfer-available').textContent = '';
+    
+    // Устанавливаем обработчики событий
+    loadTransferBalances();
+}
+
+function closeTransferModal() {
+    document.getElementById('transferModal').classList.add('hidden');
+}
+
+function loadTransferBalances() {
+    // Обновляем список валют и доступные суммы на основе выбранной кассы
+    const fromSelect = document.getElementById('transfer-from');
+    const currencySelect = document.getElementById('transfer-currency');
+    
+    // Удаляем старые слушатели (если есть) чтобы избежать дублирования
+    fromSelect.onchange = updateAvailableAmount;
+    currencySelect.onchange = updateAvailableAmount;
+    
+    updateAvailableAmount();
+}
+
+function updateAvailableAmount() {
+    const currencyCode = document.getElementById('transfer-currency').value;
+    const fromValue = document.getElementById('transfer-from').value;
+    
+    if (!currencyCode || !fromValue) {
+        document.getElementById('transfer-available').textContent = '';
+        return;
+    }
+    
+    // Ищем элемент в соответствующей вкладке
+    const tabSelector = fromValue === 'desk' ? '[x-show*="desk_current"]' : '[x-show*="safe_current"]';
+    const elements = document.querySelectorAll(`div[data-currency="${currencyCode}"][data-node-type="${fromValue}"]`);
+    
+    let available = 0;
+    if (elements.length > 0) {
+        const balance = parseFloat(elements[0].getAttribute('data-balance')) || 0;
+        available = balance;
+    }
+    
+    // Автоматически обновляем max для input
+    document.getElementById('transfer-amount').max = available;
+    document.getElementById('transfer-available').textContent = `Доступно: ${available.toFixed(2)}`;
+}
+
+async function confirmTransfer() {
+    const from = document.getElementById('transfer-from').value;
+    const to = document.getElementById('transfer-to').value;
+    const currency = document.getElementById('transfer-currency').value;
+    const amount = parseFloat(document.getElementById('transfer-amount').value);
+    const comment = document.getElementById('transfer-comment').value;
+
+    if (!from || !to || !currency || !amount || amount <= 0) {
+        alert('Заполните все обязательные поля');
+        return;
+    }
+
+    if (from === to) {
+        alert('Выберите разные кассы');
+        return;
+    }
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Отправляю...';
+
+    try {
+        const response = await fetch('{% url "admin:wholesale_transfer_between_desks" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}',
+            },
+            body: JSON.stringify({
+                from_node_type: from,
+                to_node_type: to,
+                currency_code: currency,
+                amount: amount,
+                comment: comment,
+                shift_id: {% if current_shift %}{{ current_shift.id }}{% else %}null{% endif %},
+            }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showTransferToast('Перевод выполнен успешно!', 'success');
+            closeTransferModal();
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showTransferToast(data.error || 'Ошибка при переводе', 'error');
+        }
+    } catch (error) {
+        console.error(error);
+        showTransferToast('Ошибка сети: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Перевести';
+    }
+}
+
+function showTransferToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded text-white font-semibold z-50 ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// УПРАВЛЕНИЕ ОТМЕНОЙ ЗАКАЗОВ (СУЩЕСТВУЮЩИЙ КОД)
+// ────────────────────────────────────────────────────────────────────────────────
+
+function closeReverseModal() {
+    document.getElementById('reverseModal').classList.add('hidden');
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const openBtn = document.getElementById("open-balance");
+    const closeBtn = document.getElementById("close-balance");
+    const drawer = document.getElementById("balance-drawer");
+    const overlay = document.getElementById("balance-overlay");
+
+    if (!drawer || !overlay) return;
+
+    function openDrawer() {
+        drawer.classList.remove("hidden");
+        overlay.classList.remove("hidden");
+    }
+
+    function closeDrawer() {
+        drawer.classList.add("hidden");
+        overlay.classList.add("hidden");
+    }
+
+    if (openBtn) openBtn.addEventListener("click", openDrawer);
+    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+    if (overlay) overlay.addEventListener("click", closeDrawer);
+
+});
+
+
+
+</script>
+
+<script>
+document.addEventListener("keydown", function(e) {
+
+    // игнор если пользователь печатает в input
+    const tag = document.activeElement.tagName.toLowerCase();
+    if (tag === "input" || tag === "textarea") return;
+
+    switch (e.code) {
+
+        case "F1":
+            e.preventDefault();
+            window.location.href = "exchange/?type=buy&shift__node__id={{ selected_node_id }}";
+            break;
+
+        case "F2":
+            e.preventDefault();
+            window.location.href = "exchange/?type=sell&shift__node__id={{ selected_node_id }}";
+            break;
+
+        case "F3":
+            e.preventDefault();
+            window.location.href = "exchange/?type=in&shift__node__id={{ selected_node_id }}";
+            break;
+
+        case "F4":
+            e.preventDefault();
+            window.location.href = "exchange/?type=out&shift__node__id={{ selected_node_id }}";
+            break;
+    }
+});
+</script>
+
+{% endblock %}
+
+<script src="{% static 'admin/js/switch_cashdesk.js' %}"></script>

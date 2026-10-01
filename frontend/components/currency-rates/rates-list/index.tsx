@@ -13,14 +13,14 @@ function getUniqueByCode<T extends { code: string }>(array: T[]): T[] {
 
 function sortUrls<T extends { currency: string }>(arr: T[]) {
   return arr.sort((a, b) => {
-    const numA = parseInt(a.currency.split("/")[4]);
-    const numB = parseInt(b.currency.split("/")[4]);
+    const numA = parseInt(a.currency.split("/")[5]);
+    const numB = parseInt(b.currency.split("/")[5]);
     return numA - numB;
   });
 }
 
 export function RatesList() {
-  const [visibleCount] = useState(4);
+  const [visibleCount] = useState(5);
   // const [visibleCount, setVisibleCount] = useState(5);
   const ratesList = useExchangersStore((store) => store.ratesList);
 

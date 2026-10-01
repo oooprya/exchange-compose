@@ -1,0 +1,10 @@
+aiohttp==3.7.4.post0
+playwright==1.48.0
+aiosqlite==0.20.0
+# aiogram==3.18.0
+# python-dotenv==1.0.1
+# requests==2.32.3
+loguru==0.7.3
+beautifulsoup4==4.13.3
+# pytz==2025.1
+# psycopg2-binary==2.9.10

@@ -1,0 +1,35 @@
+.h2 {
+    margin-bottom: 28px;
+    font-size: 38px;
+    line-height: 45px;
+    font-weight: 300;
+    text-align: center;
+}
+
+.textYellow {
+    color: var(--brand-color);
+}
+
+.grid{
+    display: grid;
+        justify-content: center;
+    grid-template-columns: repeat(4, 270px);
+    gap: 24px;
+}
+
+
+@media screen and (max-width: 1200px) {
+.grid {
+    grid-template-columns: repeat(3, 270px);
+}
+}
+@media screen and (max-width: 920px) {
+.grid {
+    grid-template-columns: repeat(2, 270px);
+}
+}
+@media screen and (max-width: 620px) {
+.grid {
+    grid-template-columns: repeat(1, auto);
+}
+}

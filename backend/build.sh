@@ -11,7 +11,7 @@ echo "PostgreSQL started"
 python manage.py collectstatic --no-input
 
 # Run migrations
-python manage.py migrate --noinput
+# python manage.py migrate --noinput
 
 # Start gunicorn
 # gunicorn base.wsgi:application --bind 0.0.0.0:8000 --workers 3 --worker-class sync --timeout 60

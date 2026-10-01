@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import Select from "@/components/select";
 import { Input } from "@/components/ui/input";
@@ -30,27 +32,44 @@ export function MainForm() {
     number
   );
 
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [autoSearched, setAutoSearched] = useState(false);
+
 
   const params = useParams<{ code: string }>()
+  const searchParams = useSearchParams();
 
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchCurrencyList = async () => {
       const response = await fetch("/api/currency?limit=22");
-      const { objects } = await response.json() as {objects: Currency[]};
+      const { objects } = await response.json() as { objects: Currency[] };
       setCurrencyList(objects);
       if (objects.length > 0) {
-        if (!params) {
-          setCurrency(objects[0]);
+        // Prefer dynamic route param (e.g. /kurs/[code])
+        if (params && params.code) {
+          const paramCurr = objects.find((item) => item.code === params.code);
+          setCurrency(paramCurr || objects[0]);
         } else {
-          const paramCurr = objects.find(item => {
-            // console.log('code', item.code, 'params', params.code)
-            return item.code === params.code
+          // If search params present (e.g. ?sell=usdnew&sum=1000), use them
+          const sellParam = searchParams?.get("sell");
+          const sumParam = searchParams?.get("sum");
+
+          if (sellParam) {
+            const found = objects.find((item) => item.code === sellParam);
+            if (found) setCurrency(found);
+            // set mode to 'sell' when `sell` query param is present
+            setMode("sell");
+          } else {
+            setCurrency(objects[0]);
           }
-          )
-          // console.log(objects)
-          setCurrency(paramCurr || objects[0] )
-          // console.log(params)
+
+          if (sumParam) {
+            const parsed = parseFloat(sumParam);
+            if (!isNaN(parsed)) setNumber(parsed);
+          }
         }
       }
     };
@@ -77,6 +96,17 @@ export function MainForm() {
     setError,
   ]);
 
+  useEffect(() => {
+    if (autoSearched) return;
+    const sellParam = searchParams?.get("sell");
+    const sumParam = searchParams?.get("sum");
+    if ((sellParam || sumParam) && currency) {
+      // trigger search once when params present and currency resolved
+      refetch();
+      setAutoSearched(true);
+    }
+  }, [currency, number, autoSearched, refetch, searchParams]);
+
   // useEffect(() => {
   //   if (currencyList) setCurrency(currencyList[0]);
   // }, [currencyList]);
@@ -86,6 +116,7 @@ export function MainForm() {
 
     // Разрешаем только цифры и точку (без минуса)
     inputValue = inputValue.replace(/[^0-9.]/g, "");
+    console.log('Значение:', inputValue);
 
     // Предотвращаем ввод нескольких точек подряд
     if ((inputValue.match(/\./g) || []).length > 1) {
@@ -102,25 +133,55 @@ export function MainForm() {
     }
   };
 
+  const buildQuery = () => {
+    const params = new URLSearchParams();
+    if (currency && currency.code) {
+      if (mode === "sell") params.set("sell", currency.code);
+      else params.set("buy", currency.code);
+    }
+    if (typeof number === "number" && !Number.isNaN(number)) {
+      params.set("sum", String(number));
+    }
+    return params.toString();
+  };
+
+  useEffect(() => {
+    if (!pathname) return;
+    const query = buildQuery();
+    const currentQuery = searchParams?.toString() || "";
+    if (query !== currentQuery) {
+      router.replace(query ? `${pathname}?${query}` : pathname);
+    }
+  }, [mode, currency?.code, number, pathname, router, searchParams]);
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // build query params based on mode, currency and amount
+    const query = buildQuery();
+
+    // stay on current page and update query string
+    router.push(query ? `${pathname}?${query}` : pathname || "/");
+
+    // also trigger existing exchangers fetch
     refetch();
   };
 
 
-const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-  if (event.key === "Enter") {
-    event.preventDefault(); // Важно, чтобы предотвратить стандартное поведение Enter в форме
-    if (!isLoading) { // Добавлена проверка, чтобы не вызывать refetch во время загрузки
-      refetch();
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault(); // Важно, чтобы предотвратить стандартное поведение Enter в форме
+      if (!isLoading) { // Добавлена проверка, чтобы не вызывать refetch во время загрузки
+        // mimic submit behaviour on Enter
+        const query = buildQuery();
+        router.push(query ? `${pathname}?${query}` : pathname || "/");
+        refetch();
+      }
     }
-  }
-};
+  };
   return (
     <form
-      className={`${styles.form}${
-        isSelectOpen ? ` ${styles.selectorOpen}` : ""
-      }`}
+      className={`${styles.form}${isSelectOpen ? ` ${styles.selectorOpen}` : ""
+        }`}
       onSubmit={handleSubmit}
     >
       <FormTabs mode={mode} setMode={setMode} />

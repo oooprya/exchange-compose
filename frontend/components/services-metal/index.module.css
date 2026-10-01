@@ -1,0 +1,53 @@
+.stepsItem {
+  /* Вашы стили для контейнера li */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  list-style: none;
+  /* Пример отступов */
+  padding: 1rem;
+  border-radius: 8px;
+
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+  border: 1px solid var(--border-brand-ghost);
+  border-radius: 1rem;
+  
+  /* Glassmorphism */
+  background: #FFFFFF;
+  border-radius: 16px;
+  backdrop-filter: blur(10.8px);
+  -webkit-backdrop-filter: blur(10.8px);
+  transition: background-color 0.15s ease-in-out;
+  }
+
+.minPercent {
+  /* Стили для картинки */
+  object-fit: contain;
+  /* Если нужно скругление или тень */
+}
+
+.stepsContent {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.stepsText {
+  /* Стили для названия */
+  font-size: 1rem;
+  font-weight: 300;
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+
+.stepsTitle {
+  /* Стили для цены */
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: inherit;
+}
+
+.servicesMetalSiver .stepsText{
+  color: #A4A4A4;
+}

@@ -5,7 +5,7 @@ import ShareButton from '@/components/ui/share-button';
 import { CardContainer } from '@/components/ui/card-container';
 import CurrentTime from "@/components/current-time";
 import ExchangersList from "@/components/exchangers-list";
-
+import Image from 'next/image';
 import styles from "./page.module.css";
 import type { Metadata } from "next";
 
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: ExchangerPageProps): Promise<
     title: `Обмін валют – ${ex.address} | EXPRIVAT`,
     description: `Курс валют у пункті обміну: ${ex.address}. Актуальні курси, графік роботи та маршрут.`,
     metadataBase: new URL(`https://exprivat.com.ua/`),
-    keywords:"курс долара Одеса, обмін валют Одеса, актуальний курс обміну, обмінники Одеса, курс євро до гривні",
+    keywords: "курс долара Одеса, обмін валют Одеса, актуальний курс обміну, обмінники Одеса, курс євро до гривні",
 
     openGraph: {
       locale: "ua_UA",
@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: ExchangerPageProps): Promise<
       },
       siteName: "exprivat.com.ua",
     },
-    };
+  };
 }
 
 
@@ -88,10 +88,13 @@ export default async function ExchangerPage({ params }: ExchangerPageProps) {
   // Снова используем ту же функцию. Next.js возьмет данные из кэша.
   const exchanger = await getExchangerData(slug);
 
+
+
   // Если данные не найдены, вызываем 404
   if (!exchanger) {
     notFound();
   }
+
 
   return (
     <div className={styles.page}>
@@ -102,15 +105,21 @@ export default async function ExchangerPage({ params }: ExchangerPageProps) {
               <h1 className={styles.title}>
                 Курс валют у пункті обміну: {exchanger.address}
               </h1>
-
+              <Image className={styles.addressImg}
+                src={`/address_${exchanger.id}.jpg`}
+                width={512}
+                height={512}
+                alt={exchanger.address}
+                priority={false} // Поставьте true, если это первое изображение на экране (LCP)
+              />
               <p className={styles.pageP}>
                 <strong>Графік роботи:</strong> {exchanger.working_hours}
               </p>
               <ShareButton
-                  title={`Курс валют ${exchanger.address}`}
-                  text={`Дивись актуальний курс валют у пункті обміну: ${exchanger.address}`}
-                  url={`https://exprivat.com.ua/obmen/${exchanger.slug}`}
-                />
+                title={`Курс валют ${exchanger.address}`}
+                text={`Дивись актуальний курс валют у пункті обміну: ${exchanger.address}`}
+                url={`https://exprivat.com.ua/obmen/${exchanger.slug}`}
+              />
 
             </div>
 
@@ -119,7 +128,7 @@ export default async function ExchangerPage({ params }: ExchangerPageProps) {
                 <h2 className={styles.title}>
                   {/* <CurrentTime /> лучше тоже сделать клиентским компонентом,
                       чтобы он не ломал кэширование страницы */}
-                  Курс валют на <CurrentTime /> 
+                  Курс валют на <CurrentTime />
                 </h2>
 
                 {/* ВАЖНО: Теперь <RatesList> должен сам 

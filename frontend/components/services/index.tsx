@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from "next/link";
 import { Container } from '@/components/ui/container';
 import { CardContainer } from '@/components/ui/card-container';
 import styles from './index.module.css';
@@ -30,6 +31,15 @@ export function Services({ count = dataServices.length }: ServicesProps) {
                       <span><Image width={48} height={48} src={step.icon} alt={step.title} /></span>
                       <h3 className={styles.serviceTitle}>{step.title}</h3>
                       <p className={styles.serviceText}>{step.text}</p>
+
+                      {step.url && (
+                        <Link
+                          className={styles.location}
+                          href={step.url}
+                        >
+                          <span className={styles.locationText}>докладніше</span>
+                        </Link>
+                      )}
                     </div>
                   </CardContainer>
                 </li>

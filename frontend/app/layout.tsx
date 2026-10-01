@@ -39,6 +39,7 @@ const eUkraine = localFont({
 });
 
 export const metadata: Metadata = {
+  manifest: '/manifest.json',
   title: "Курс долара в Одесі сьогодні – актуальні обмінники та найкращий курс валют",
   description:
     "Шукаєте, де вигідно обміняти валюту в Одесі? Актуальний курс долара, євро та інших валют у наших обмінних пунктах. Оновлення щодня!",
@@ -71,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="uk-UA" suppressHydrationWarning>
       <head>
         {/* GTM Script */}
       <Script
@@ -87,7 +88,7 @@ export default function RootLayout({
           `,
         }}
       />
-        {/* <Script
+        <Script
           id="google-analytics"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
@@ -98,8 +99,8 @@ export default function RootLayout({
               gtag('config', 'G-STJ7PH7DVD');
             `,
           }}
-        /> */}
-        <meta name="apple-mobile-web-app-title" content="exprivat" />
+        />
+        <meta name="apple-mobile-web-app-title" content="Obmen Privat" />
 
       </head>
       <body className={`${eUkraine.className}`}>

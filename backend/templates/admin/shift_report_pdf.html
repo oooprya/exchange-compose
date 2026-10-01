@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Отчет о смене</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 11pt;
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 18pt;
+            font-weight: bold;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #999;
+            padding-bottom: 5px;
+        }
+        
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .info-row {
+            display: table-row;
+        }
+        
+        .info-cell {
+            display: table-cell;
+            width: 25%;
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .info-value {
+            font-size: 11pt;
+            margin-top: 3px;
+        }
+        
+        .totals-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .total-item {
+            display: table-cell;
+            width: 20%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        
+        .total-label {
+            font-weight: bold;
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .total-value {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 3px;
+        }
+        
+        .positive {
+            color: #22c55e;
+        }
+        
+        .negative {
+            color: #ef4444;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        table thead {
+            background-color: #f3f4f6;
+        }
+        
+        table th {
+            border: 1px solid #d1d5db;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        
+        table td {
+            border: 1px solid #d1d5db;
+            padding: 6px;
+            font-size: 10pt;
+        }
+        
+        table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .currency-code {
+            font-weight: bold;
+        }
+        
+        .mono {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+        
+        .badge-buy {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-sell {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge-in {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-out {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .badge-add {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-collect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .two-columns {
+            display: table;
+            width: 100%;
+        }
+        
+        .column {
+            display: table-cell;
+            width: 48%;
+            vertical-align: top;
+            padding-right: 20px;
+        }
+        
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 9pt;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- ЗАГОЛОВОК -->
+    <div class="header">
+        <h1>Отчет о смене</h1>
+    </div>
+
+    <!-- ИНФОРМАЦИЯ О СМЕНЕ -->
+    <div class="section">
+        <div class="section-title">Информация о смене</div>
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-cell">
+                    <div class="info-label">Кассир</div>
+                    <div class="info-value">{{ report.cashier }}</div>
+                </div>
+                <div class="info-cell">
+                    <div class="info-label">Касса</div>
+                    <div class="info-value">{{ report.shift.node.name }}</div>
+                </div>
+                <div class="info-cell">
+                    <div class="info-label">Открыта</div>
+                    <div class="info-value mono">{{ report.opened_at|date:"d.m.Y H:i" }}</div>
+                </div>
+                <div class="info-cell">
+                    <div class="info-label">Закрыта</div>
+                    <div class="info-value mono">{% if report.closed_at %}{{ report.closed_at|date:"d.m.Y H:i" }}{% else %}-{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ИТОГИ ОПЕРАЦИЙ -->
+    <div class="section">
+        <div class="section-title">Итоги операций</div>
+        <div class="totals-grid">
+            <div class="total-item">
+                <div class="total-label">Прибыль</div>
+                <div class="total-value {% if report.profit >= 0 %}positive{% else %}negative{% endif %}">
+                    {{ report.profit|floatformat:0 }} ₴
+                </div>
+            </div>
+            <div class="total-item">
+                <div class="total-label">Куплено</div>
+                <div class="total-value">{{ report.totals.buy|floatformat:2 }}</div>
+            </div>
+            <div class="total-item">
+                <div class="total-label">Продано</div>
+                <div class="total-value">{{ report.totals.sell|floatformat:2 }}</div>
+            </div>
+            <div class="total-item">
+                <div class="total-label">Приход</div>
+                <div class="total-value">{{ report.totals.in|floatformat:2 }}</div>
+            </div>
+            <div class="total-item">
+                <div class="total-label">Расход</div>
+                <div class="total-value">{{ report.totals.out|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- БАЛАНСЫ -->
+    <div class="section">
+        <div class="section-title">Балансы по валютам</div>
+        <div class="two-columns">
+            <div class="column">
+                <strong>Конец смены:</strong>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Валюта</th>
+                            <th class="text-right">Остаток</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for balance in report.balances %}
+                        <tr>
+                            <td class="currency-code">{{ balance.currency__code|upper }}</td>
+                            <td class="text-right mono">{{ balance.balance|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center">Нет данных</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if report.morning_balances %}
+            <div class="column">
+                <strong>Утренние остатки:</strong>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Валюта</th>
+                            <th class="text-right">Остаток</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for code, data in report.morning_balances.items %}
+                        <tr>
+                            <td class="currency-code">{{ code|upper }}</td>
+                            <td class="text-right mono">{{ data.amount|floatformat:0 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center">Нет данных</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ОПЕРАЦИИ СМЕНЫ -->
+    {% if report.orders %}
+    <div class="section">
+        <div class="section-title">Операции смены</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Время</th>
+                    <th>Тип</th>
+                    <th class="currency-code">Валюта</th>
+                    <th class="text-right">Сумма</th>
+                    <th class="text-right">Курс</th>
+                    <th class="text-right">UAH</th>
+                    <th>Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in report.orders %}
+                <tr>
+                    <td class="mono">{{ order.created_at|date:"H:i" }}</td>
+                    <td>
+                        {% if order.order_type == "buy" %}
+                            <span class="badge badge-buy">Покупка</span>
+                        {% elif order.order_type == "sell" %}
+                            <span class="badge badge-sell">Продажа</span>
+                        {% elif order.order_type == "in" %}
+                            <span class="badge badge-in">Приход</span>
+                        {% elif order.order_type == "out" %}
+                            <span class="badge badge-out">Расход</span>
+                        {% elif order.order_type == "add" %}
+                            <span class="badge badge-add">⬇ Подкрепление</span>
+                        {% elif order.order_type == "collect" %}
+                            <span class="badge badge-collect">⬆ Инкассация</span>
+                        {% endif %}
+                    </td>
+                    <td class="currency-code">{{ order.currency__code|upper }}</td>
+                    <td class="text-right mono">{{ order.amount_currency|floatformat:2 }}</td>
+                    <td class="text-right mono">{{ order.rate|default:"-"|floatformat:4 }}</td>
+                    <td class="text-right mono">{{ order.amount_base|default:"-"|floatformat:2 }}</td>
+                    <td>{{ order.comment|truncatewords:5 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        Отчет сгенерирован: {{ report.closed_at|date:"d.m.Y H:i" }}
+    </div>
+</body>
+</html>

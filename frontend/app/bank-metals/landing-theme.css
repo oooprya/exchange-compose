@@ -1,0 +1,28 @@
+body {
+    background: #F2F2F2;
+
+    background: linear-gradient(180deg, #E4B64F 0%, #F2F2F2 25%, #F2F2F2 80%, #E4B64F 100%);
+    /* background: linear-gradient(180deg, #E4B64F 0%, rgba(218, 218, 218, 0) 40%); */
+
+    color: var(--black-color);
+}
+
+body nav svg path {
+    fill: #000000;
+}
+
+body footer~svg {
+    display: none;
+}
+
+body p,
+body .footer,
+body footer div div {
+    color: #444 !important;
+}
+
+body nav strong,
+body nav span,
+body nav a {
+    color: var(--black-color);
+}

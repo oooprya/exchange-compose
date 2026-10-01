@@ -1,0 +1,288 @@
+Get http://localhost:8000/api/v1/orders/
+Content-Type: application/json
+
+###
+
+Get https://oooprya:1986111b@wlj7dglst1bq3cq79tqmu2fuh3s5djay.tenet.ua/get/oooprya
+Content-Type: application/json
+
+###
+
+
+POST http://localhost:8000/api/v1/orders/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+      "address_exchanger": "вулиця Олексія Маркевича, 32 (Новий ринок)",
+      "buy_or_sell": "Купить",
+      "currency_name": "EUR - Евро",
+      "exchange_rate": "44.05",
+      "order_sum": 8000,
+      "clients_telephone": "+380960028195"
+    }
+
+###
+
+patch https://exprivat.com.ua/api/v1/currencys/18/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+    "buy": "1.70",
+    "sell": "1.80",
+    "updatedAt": ""
+}
+
+###
+
+POST http://localhost:8000/api/v1/currency/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+    "code": "usd-eur",
+    "name": "Крос-курс євро долар"
+}
+
+###
+POST http://localhost:8000/api/v1/currency/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+    "code": "UAH",
+    "name": "Гривна"
+}
+###
+
+
+POST https://exprivat.com.ua/api/v1/currencys/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+      "buy": "1,0860",
+      "currency": "/api/v1/currency/21/",
+      "exchanger": "/api/v1/exchangers/3/",
+      "id": 6,
+      "sell": "1,0920",
+      "sum": 5000
+    }
+
+###
+
+
+POST http://localhost:8000/api/v1/exchangers/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+    "id": 1,
+    "address": "вулиця Успенська, 41",
+    "address_map": "https://maps.app.goo.gl/FYfhXCcqQuLtCUdL7",
+    "working_hours": "9:00 - 19:30"
+}
+###
+
+POST http://localhost:8000/api/v1/exchangers/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+    "id": 2,
+    "address": "Бізнес центр Грецька площа, 1",
+    "address_map": "https://maps.app.goo.gl/t9e5uvLYuSzwLYK58",
+    "working_hours": "9:00 - 19:00"
+}
+
+###
+
+POST http://localhost:8000/api/v1/exchangers/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+    "id": 3,
+    "address": "вулиця Мала Арнаутська, 49",
+    "address_map": "https://maps.app.goo.gl/t9e5uvLYuSzwLYK58",
+    "working_hours": "9:00 - 19:00"
+}
+
+
+###
+POST http://localhost:8000/api/v1/exchangers/
+Content-Type: application/json
+Authorization: ApiKey oooprya:befd2bc28866e973e7ce
+
+{
+  "id": 4,
+  "address": "вулиця Олексія Маркевича, 32",
+  "address_map": "https://maps.app.goo.gl/Kh8CvPGCSQMGuvR8A",
+  "working_hours": "8:00 - 17:30"
+}
+
+###
+POST https://concurent-tarrifs.tenet.ua/api/v1/domains/update
+Content-Type: application/json
+
+{
+  "parsingDate": "2025-02-02T16:44:00",
+  "domainProviders": {
+    "nic.ua": {
+      "ua": 199.0,
+      "odessa.ua": 450.50,
+      "odesa.ua": 425.0,
+      "od.ua": 380.75,
+      "org.ua": 150.0,
+      "com.ua": 175.25,
+      "com": 299.99,
+      "net.ua": null,
+      "net": 289.50,
+      "укр": 520.0,
+      "love": 890.0,
+      "vip": 1250.0,
+      "club": 445.75,
+      "travel": 780.25,
+      "shopping": 920.50,
+      "top": 320.0,
+      "store": 675.0,
+      "online": 540.25,
+      "in.ua": 140.0,
+      "org": 310.50,
+      "info": 275.0,
+      "media": 850.0,
+      "biz": 390.75,
+      "fm": 1100.0,
+      "city": 560.25,
+      "co.il": 420.0,
+      "chat": 780.50,
+      "name": 295.0,
+      "in": 185.75
+    },
+    "freehost.com.ua": {
+      "ua": 210.50,
+      "odessa.ua": 480.0,
+      "odesa.ua": null,
+      "od.ua": 395.0,
+      "org.ua": 165.75,
+      "com.ua": 185.0,
+      "com": 315.25,
+      "net.ua": 175.50,
+      "net": 305.0,
+      "укр": 545.75,
+      "love": 925.0,
+      "vip": 1320.50,
+      "club": 470.0,
+      "travel": 815.75,
+      "shopping": 955.0,
+      "top": 345.25,
+      "store": 710.50,
+      "online": 575.0,
+      "in.ua": 155.75,
+      "org": 335.0,
+      "info": null,
+      "media": 885.50,
+      "biz": 415.0,
+      "fm": 1145.75,
+      "city": 595.0,
+      "co.il": 445.25,
+      "chat": 815.50,
+      "name": 310.0,
+      "in": 200.25
+    },
+    "www.ukraine.com.ua": {
+      "ua": 185.25,
+      "odessa.ua": 435.0,
+      "odesa.ua": 410.75,
+      "od.ua": 365.50,
+      "org.ua": 135.0,
+      "com.ua": 160.25,
+      "com": null,
+      "net.ua": 145.75,
+      "net": 275.50,
+      "укр": 505.0,
+      "love": 865.25,
+      "vip": 1195.0,
+      "club": 430.50,
+      "travel": 755.0,
+      "shopping": 895.75,
+      "top": 305.50,
+      "store": 650.0,
+      "online": 525.25,
+      "in.ua": 125.0,
+      "org": 295.75,
+      "info": 260.50,
+      "media": 825.0,
+      "biz": 375.25,
+      "fm": 1075.0,
+      "city": 545.50,
+      "co.il": 405.0,
+      "chat": 765.25,
+      "name": 280.50,
+      "in": 170.0
+    },
+    "hostiq.ua": {
+      "ua": 225.75,
+      "odessa.ua": 495.25,
+      "odesa.ua": null,
+      "od.ua": 410.50,
+      "org.ua": 180.0,
+      "com.ua": 200.75,
+      "com": 330.0,
+      "net.ua": 190.25,
+      "net": 320.50,
+      "укр": 560.0,
+      "love": 960.75,
+      "vip": 1385.0,
+      "club": 485.25,
+      "travel": 850.50,
+      "shopping": 990.0,
+      "top": 360.75,
+      "store": 745.0,
+      "online": 590.25,
+      "in.ua": 170.50,
+      "org": 350.0,
+      "info": 305.75,
+      "media": 920.0,
+      "biz": 430.25,
+      "fm": 1190.50,
+      "city": 630.0,
+      "co.il": 460.75,
+      "chat": 850.0,
+      "name": 325.25,
+      "in": 215.50
+    },
+    "www.imena.ua": {
+      "ua": 195.0,
+      "odessa.ua": 465.75,
+      "odesa.ua": 440.25,
+      "od.ua": 385.0,
+      "org.ua": 155.50,
+      "com.ua": 180.0,
+      "com": 305.75,
+      "net.ua": 165.0,
+      "net": 295.25,
+      "укр": 530.50,
+      "love": 905.0,
+      "vip": 1275.75,
+      "club": 455.0,
+      "travel": 795.25,
+      "shopping": 940.50,
+      "top": 330.0,
+      "store": 690.75,
+      "online": null,
+      "in.ua": 145.25,
+      "org": 320.50,
+      "info": 280.0,
+      "media": 865.75,
+      "biz": 400.0,
+      "fm": 1125.25,
+      "city": 575.50,
+      "co.il": 430.0,
+      "chat": 795.75,
+      "name": 300.0,
+      "in": 190.25
+    }
+  }
+}

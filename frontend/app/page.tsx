@@ -1,4 +1,5 @@
 import { Container } from "@/components/ui/container";
+import React, { Suspense } from "react";
 import { MainForm } from "@/components/main-form";
 import { Services } from "@/components/services";
 import ExchangersResult from "@/components/exchangers-result";
@@ -12,15 +13,18 @@ import { dataSteps } from "@/data";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Курс валют в обменниках Одеса | EXPRIVAT",
+  title: "Обмін валют в Одесі — курс долара та євро | EXPRIVAT",
   description:
     "Шукаєте, де вигідно обміняти валюту в Одесі? Актуальний курс долара, євро та інших валют у наших обмінних пунктах. Оновлення щодня!",
   metadataBase: new URL("https://www.exprivat.com.ua/"),
+  alternates: {
+    canonical: "/",
+  },
   keywords:"курс долара Одеса, обмін валют Одеса, актуальний курс обміну, обмінники Одеса, курс євро до гривні",
 
   openGraph: {
     locale: "ua_UA",
-    title: "Курс валют в обменниках Одеса | EXPRIVAT",
+    title: "Обмін валют в Одесі — курс долара та євро | EXPRIVAT",
     description:
       "Шукаєте, де вигідно обміняти валюту в Одесі? Актуальний курс долара, євро та інших валют у наших обмінних пунктах. Оновлення щодня!",
     type: "website",
@@ -42,15 +46,16 @@ export default async function Home() {
           <div className={styles.inner}>
             <div className={styles.textWrapper}>
               <h1 className={styles.title}>
-                Просто та вигідно обміняти валюту
+                Обмін валют в Одесі — актуальний курс долара та євро
               </h1>
               <p className={styles.subtitle}>
-                Введіть суму, яку хочете продати або купити , і натисніть
-                «Знайти де обміняти»
+                Просто та вигідно обміняти валюту
               </p>
               <p className={styles.rate}>Оптовий курс від 500 $/€</p>
             </div>
+            <Suspense fallback={<div />}> 
             <MainForm />
+            </Suspense>
           </div>
         </Container>
       </section>

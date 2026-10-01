@@ -12,8 +12,15 @@ export function Header() {
         <nav className={styles.nav}>
           <Link className={styles.logo} href="/" title="Главная страница">
             <Logo className={styles.logoImg} />
-            Private <span>exchanges</span>
+            <strong>Private</strong> <span>exchanges</span>
           </Link>
+          <Link
+            className={styles.navlink}
+            href="/bank-metals"
+            title="Банківські метали">
+            Банківські метали
+          </Link>
+          
         </nav>
       </Container>
     </header>

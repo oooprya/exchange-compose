@@ -11,6 +11,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/maintenance.html:/usr/share/nginx/html/maintenance.html:ro
       - static_volume:/app/base/static
     depends_on:
       - backend
@@ -51,38 +52,65 @@ services:
     networks:
       - dev
 
+  # frontend:
+  #   build: ./frontend
+  #   image: next_v1.0005
+  #   ports:
+  #     - 4000:3000
+  #   environment:
+  #     - TZ=Europe/Kiev
+  #   restart: always
+  #   depends_on:
+  #     - nginx
+  #   networks:
+  #     - dev
 
-  celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
-    container_name: celery_worker
-    # Переопределяем команду запуска — вместо gunicorn запускаем worker
-    command: celery -A base worker -l info  # ← замени myproject на имя твоего проекта
+  telegram_bot:
+    image: bot_v1.0003
+    build: ./bot
+    container_name: telegram_bot
+    volumes:
+      - static_volume:/app
+    restart: unless-stopped
+    depends_on:
+      - backend
     env_file:
       - ./.env
-    restart: always
-    depends_on:
-      - redis
-      - db
     networks:
       - dev
 
-  celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
-    container_name: celery_beat
-    # Beat — планировщик, запускает задачи по расписанию
-    command: celery -A base beat -l info  # ← замени myproject на имя твоего проекта
-    env_file:
-      - ./.env
-    restart: always
-    depends_on:
-      - redis
-      - db
-    networks:
-      - dev
+
+  # celery_worker:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile.prod
+  #   container_name: celery_worker
+  #   # Переопределяем команду запуска — вместо gunicorn запускаем worker
+  #   command: celery -A base worker -l info  # ← замени myproject на имя твоего проекта
+  #   env_file:
+  #     - ./.env
+  #   restart: always
+  #   depends_on:
+  #     - redis
+  #     - db
+  #   networks:
+  #     - dev
+
+  # celery_beat:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile.prod
+  #   container_name: celery_beat
+  #   # Beat — планировщик, запускает задачи по расписанию
+  #   command: celery -A base beat -l info  # ← замени myproject на имя твоего проекта
+  #   env_file:
+  #     - ./.env
+  #   restart: always
+  #   depends_on:
+  #     - redis
+  #     - db
+  #   networks:
+  #     - dev
 
 
   redis:

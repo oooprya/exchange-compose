@@ -1,5 +1,5 @@
 {% extends "admin/change_list.html" %}
-{% load humanize %}
+{% load humanize static %}
 
 {% block object-tools %}
     {% if current_shift %}
@@ -29,6 +29,40 @@
     <div style="display:flex; gap:20px;  flex-direction: column;     width: 25%;">
 
         <div class="space-y-4">
+
+        {% if current_shift %}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
+            <h3 class="text-lg font-semibold mb-3">🔁 Касса</h3>
+
+            <div style="margin-bottom:8px;">
+                <select id="cashdeskSelector" style="width:100%; padding:8px; font-weight:600;">
+                    {% for node in current_shift.staff.nodes.all %}
+                        {% if node.is_active %}
+                            <option value="{{ node.id }}" {% if current_shift.node and current_shift.node.id == node.id %}selected{% endif %}>
+                                {{ node.name }} — {{ node.exchange_point.address }}
+                            </option>
+                        {% endif %}
+                    {% empty %}
+                        <option disabled>Нет доступных касс</option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="current_shift_id" value="{{ current_shift.id }}" />
+            </div>
+
+            <div id="cashdeskBalances">
+                {% for b in current_balances %}
+                    <div class="flex justify-between py-2 border-b last:border-0">
+                        <span class="font-medium text-gray-600">{{ b.currency.code }}</span>
+                        <span class="font-bold text-green-600">{{ b.balance }}</span>
+                    </div>
+                {% empty %}
+                    <div class="text-gray-400 text-sm">Нет данных по балансу</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top:10px; font-size:12px; color:#666;">Выбор кассы меняет активную кассу для текущей открытой смены.</div>
+        </div>
+        {% endif %}
 
     <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
 
@@ -116,6 +150,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 });
 </script>
+
+<script src="{% static 'admin/js/switch_cashdesk.js' %}"></script>
 
 {% endblock %}
 

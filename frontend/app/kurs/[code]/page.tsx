@@ -65,6 +65,9 @@ export async function generateMetadata(
 
     return {
       title: `Курс ${currency.name} - обмін валют у центрі одесі`,
+      alternates: {
+      canonical: `/kurs/${currency.code}`,
+    },
       description: `Актуальний курс ${currency.name} в Одесі. Купівля та продаж за вигідним курсом. Бронюй онлайн або знайди зручне відділення.`,
     };
   } catch (error) {

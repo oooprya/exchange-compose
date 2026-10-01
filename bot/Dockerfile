@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3.10-alpine
 
 # set work directory
 WORKDIR /usr/src/app/
@@ -18,4 +18,5 @@ COPY . .
 
 
 # # run app
-CMD ["python", "main.py"]
+# CMD ["python", "main.py"]
+CMD ["python", "ai-main.py"]

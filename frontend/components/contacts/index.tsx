@@ -26,21 +26,21 @@ export function Contacts() {
                   </div>
                 </div>
               </CardContainer>
-              
+
             </li>
             <li>
               <CardContainer>
-              <div className={styles.Content}>
-                <h3 className={styles.contactName}>Керівник</h3>
-                <a href="tel:+380634765088" className={styles.contactTel} itemProp="telephone">063 476 50 88</a>
-                <div className={styles.iconRow}>
-                  <a href="https://t.me/VitalikPrivat" target="_blank" aria-label="посилання на telegram Керівника" className={styles.telegram}>&nbsp;</a>
-                  <a href="https://wa.me/+380634765088" target="_blank" aria-label="посилання на whatsApp Керівника" className={styles.whatsApp}>&nbsp;</a>
-                  <a href="viber://chat?number=%2B380634765088" target="_blank" aria-label="посилання на viber Керівника" className={styles.viber}>&nbsp;</a>
+                <div className={styles.Content}>
+                  <h3 className={styles.contactName}>Керівник</h3>
+                  <a href="tel:+380634765088" className={styles.contactTel} itemProp="telephone">063 476 50 88</a>
+                  <div className={styles.iconRow}>
+                    <a href="https://t.me/VitalikPrivat" target="_blank" aria-label="посилання на telegram Керівника" className={styles.telegram}>&nbsp;</a>
+                    <a href="https://wa.me/+380634765088" target="_blank" aria-label="посилання на whatsApp Керівника" className={styles.whatsApp}>&nbsp;</a>
+                    <a href="viber://chat?number=%2B380634765088" target="_blank" aria-label="посилання на viber Керівника" className={styles.viber}>&nbsp;</a>
+                  </div>
                 </div>
-              </div>
               </CardContainer>
-              
+
             </li>
           </ul>
         </div>
