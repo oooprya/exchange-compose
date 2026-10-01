@@ -1,0 +1,73 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<div class="p-6">
+
+    <h1 class="text-2xl font-bold mb-6">
+        📊 Отчеты смен
+    </h1>
+
+    <div class="bg-white rounded shadow overflow-hidden">
+
+        <table class="w-full">
+
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="p-3 text-left">Касса</th>
+                    <th class="p-3 text-left">Кассир</th>
+                    <th class="p-3 text-left">Открыта</th>
+                    <th class="p-3 text-left">Сделок</th>
+                    <th class="p-3 text-left">Оборот</th>
+                    <th class="p-3 text-left"></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for shift in shifts %}
+                <tr class="border-t">
+
+                    <td class="p-3">
+                        {{ shift.node.name }}
+                    </td>
+
+                    <td class="p-3">
+                        {{ shift.staff.user }}
+                    </td>
+
+                    <td class="p-3">
+                        {{ shift.opened_at }}
+                    </td>
+
+                    <td class="p-3 font-semibold">
+                        {{ shift.deals_count|default:0 }}
+                    </td>
+
+                    <td class="p-3">
+                        {{ shift.total_uah|default:0 }}
+                    </td>
+
+                    <td class="p-3">
+
+                        <a
+                            href="/admin/wholesale/wholesaleorder/shift-report-xls/?shift_id={{ shift.id }}"
+                            class="bg-blue-600 text-white px-3 py-2 rounded"
+                        >
+                            XLS
+                        </a>
+
+                    </td>
+
+                </tr>
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

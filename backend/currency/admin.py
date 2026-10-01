@@ -2,10 +2,32 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 from .models import Exchanger, Currency, CartItem, Orders, Users
 
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
+from django.contrib.auth.models import User, Group
+
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.admin import ModelAdmin
+
+
+admin.site.unregister(User)
+admin.site.unregister(Group)
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin, ModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+
+
+@admin.register(Group)
+class GroupAdmin(BaseGroupAdmin, ModelAdmin):
+    pass
+
 
 class CurrencyInline(TabularInline):
     model = CartItem
-    tab = True
     extra = 1
 
 
@@ -21,7 +43,7 @@ class CartItemAdmin(ModelAdmin):
     list_display_links = ["exchanger"]
 
 
-class CurrencyAdmin(admin.ModelAdmin):
+class CurrencyAdmin(ModelAdmin):
     list_display = ('name', 'code', 'is_visible', 'sort_order')
     list_editable = ('is_visible', 'sort_order')
     list_filter = ('is_visible',)

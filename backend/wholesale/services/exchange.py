@@ -42,8 +42,8 @@ def process_exchange(order):
         # =========================
         if order.order_type == "buy":
 
-            if uah_balance.balance < amount_base:
-                raise ValidationError("Недостаточно гривны в кассе")
+            # if uah_balance.balance < amount_base:
+            #     raise ValidationError("Недостаточно гривны в кассе")
 
             currency_balance.balance += amount
             uah_balance.balance -= amount_base

@@ -24,14 +24,73 @@ TOOLS = [
         },
         "strict": True,
     },
-    
-
+    {
+        "type": "function",
+        "name": "get_usd_rates",
+        "description": (
+            "Получить одновременно актуальный оптовый курс "
+            "белого USD и синего USD. "
+            "Используй, когда клиент спрашивает общий курс доллара "
+            "без уточнения разновидности, например: "
+            "'Какой курс $', 'курс доллара', 'доллар почём'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
+        "type": "function",
+        "name": "calculate_buy_for_uah",
+        "description": (
+            "Рассчитать, какое максимальное количество иностранной "
+            "валюты клиент может получить за указанную сумму гривны. "
+            "Используется, когда клиент указывает сумму в UAH, "
+            "например: '750000 грн, сколько долларов я получу'. "
+            "Для покупки валюты используется курс sell. "
+            "Покупка USD и USDNEW округляется вниз до 100 единиц, "
+            "другие валюты округляются вниз до целых единиц; "
+            "результат также содержит сумму к оплате и сдачу. "
+            "Всегда передавай raw_text без изменений, например '50к грн'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "description": "Валюта, которую клиент хочет купить. Например usd, usdnew, eur, gbp."
+                },
+                "uah_amount": {
+                    "type": "number",
+                    "description": "Сумма гривны, которую клиент хочет обменять."
+                },
+                "raw_text": {
+                    "type": "string",
+                    "description": "Исходная фраза клиента с суммой, например: 50к грн."
+                }
+            },
+            "required": [
+                "currency",
+                "uah_amount",
+                "raw_text"
+            ],
+            "additionalProperties": False
+        }
+    },
     {
         "type": "function",
         "name": "find_offer",
         "description": (
             "Найти обменник, где можно купить или продать "
             "указанную сумму валюты. "
+            "Всегда вызывай функцию, если клиент указал сумму и валюту, "
+            "даже если amount меньше 500: сервис сам нормализует сумму "
+            "по raw_text и только потом проверяет минимальный опт. "
+            "Для USD и USDNEW сумма округляется вниз до ближайших 100 "
+            "единиц, потому что мелкие купюры не принимаются по оптовому курсу. "
             "Функция проверяет внутренний остаток валюты, "
             "но остаток никогда не показывается клиенту."
         ),
@@ -54,15 +113,25 @@ TOOLS = [
                     "type": "string",
                     "enum": ["buy", "sell"],
                     "description": (
-                        "buy — клиент хочет купить валюту. "
-                        "sell — клиент хочет продать валюту."
+                        "sell — обменник продает валюту клиенту, "
+                        "клиент покупает. "
+                        "buy — обменник покупает валюту у клиента, "
+                        "клиент продает."
+                    )
+                },
+                "raw_text": {
+                    "type": "string",
+                    "description": (
+                        "Исходная фраза клиента с суммой, например: "
+                        "10 син или 15 тыс евро."
                     )
                 }
             },
             "required": [
                 "currency",
                 "amount",
-                "operation"
+                "operation",
+                "raw_text"
             ],
             "additionalProperties": False,
         },
@@ -78,7 +147,12 @@ TOOLS = [
                 "при покупке нескольких валют. "
                 "Поддерживает несколько позиций одновременно, например: "
                 "300 белых долларов + 200 синих долларов + 500 евро. "
-                "Белый доллар = usd, синий доллар = usdnew."
+                "Белый доллар = usd, синий доллар = usdnew. "
+                "Для USD при оптовой покупке и продаже сумма округляется "
+                "вниз до ближайших 100 единиц. "
+                "При operation=buy, если есть USD или USDNEW, результат "
+                "содержит обязательное поле warning: его нужно показать "
+                "клиенту после расчета."
         ),
         "parameters": {
             "type": "object",
@@ -99,11 +173,16 @@ TOOLS = [
                                 "amount": {
                                     "type": "number",
                                     "description": "Количество валюты."
+                                },
+                                "raw_text": {
+                                    "type": "string",
+                                    "description": "Исходная фраза для этой суммы, например: 10 син."
                                 }
                             },
                             "required": [
                                 "currency",
-                                "amount"
+                                "amount",
+                                "raw_text"
                             ],
                             "additionalProperties": False
                         }
@@ -115,10 +194,12 @@ TOOLS = [
                             "sell"
                         ],
                         "description": (
-                            "buy — клиент покупает валюту у обменника. "
-                            "sell — клиент продает валюту обменнику."
+                            "sell — обменник продает валюту клиенту, "
+                            "клиент покупает. "
+                            "buy — обменник покупает валюту у клиента, "
+                            "клиент продает."
                         )
-                    }
+                        }
             },
             "required": [
                 "items",
@@ -133,7 +214,8 @@ TOOLS = [
         "type": "function",
         "name": "calculate_cross_exchange",
         "description": (
-            "Рассчитать обмен двух валют по кросс-курсу."
+            "Рассчитать обмен двух валют по кросс-курсу. "
+            "Всегда передавай raw_text без изменений."
         ),
         "parameters": {
             "type": "object",
@@ -141,32 +223,39 @@ TOOLS = [
                 "sell_currency": {
                     "type": "string",
                     "description": (
-                        "Валюта, которую клиент отдаёт обменнику."
-                    )
+                        "Валюта, которую клиент отдает. "
+                        "Например EUR."
+                    ),
                 },
                 "buy_currency": {
                     "type": "string",
                     "description": (
-                        "Валюта, которую клиент получает."
-                    )
+                        "Валюта, которую клиент получает. "
+                        "Например USD."
+                    ),
                 },
                 "amount": {
                     "type": "number",
                     "description": (
-                        "Количество валюты, которую клиент хочет получить."
+                        "Сумма валюты, которую клиент отдает."
                     )
+                },
+                "raw_text": {
+                    "type": "string",
+                    "description": "Исходная фраза клиента с суммой, например: 10 син."
                 }
             },
             "required": [
                 "sell_currency",
                 "buy_currency",
-                "amount"
+                "amount",
+                "raw_text"
             ],
             "additionalProperties": False
         },
         "strict": True
     },
-    
+
     {
         "type": "function",
         "name": "get_customer_data",
@@ -207,6 +296,10 @@ TOOLS = [
                 "rate": {
                     "type": "number"
                 },
+                "raw_text": {
+                    "type": "string",
+                    "description": "Исходная фраза клиента с суммой, например: 10 син."
+                },
                 "operation": {
                     "type": "string",
                     "enum": ["buy", "sell"]
@@ -219,6 +312,7 @@ TOOLS = [
                 "phone",
                 "address",
                 "rate",
+                "raw_text",
                 "operation"
             ],
             "additionalProperties": False,
@@ -235,33 +329,24 @@ async def execute_tool(
     chat_id: str | None = None,
 ):
 
-    logger.info(
-        "Executing tool: {} | arguments={} | chat_id={}",
-        name,
-        arguments,
-        chat_id,
-    )
-
-    # ==========================================================
-    # GET RATE
-    # ==========================================================
-
     if name == "get_rate":
-
         result = await exchange.get_rate(
-            arguments["currency"]
+            currency=arguments["currency"],
         )
+        return result
 
-        logger.info(
-            "get_rate result: {}",
-            result,
+    if name == "get_usd_rates":
+        return await exchange.get_usd_rates()
+
+    if name == "calculate_buy_for_uah":
+
+        result = await exchange.calculate_buy_for_uah(
+            currency=arguments["currency"],
+            uah_amount=float(arguments["uah_amount"]),
+            raw_text=arguments.get("raw_text", ""),
         )
 
         return result
-
-    # ==========================================================
-    # FIND OFFER
-    # ==========================================================
 
     if name == "find_offer":
 
@@ -269,18 +354,10 @@ async def execute_tool(
             currency=arguments["currency"],
             amount=arguments["amount"],
             operation=arguments["operation"],
-        )
-
-        logger.info(
-            "find_offer result: {}",
-            result,
+            raw_text=arguments.get("raw_text", ""),
         )
 
         return result
-
-    # ==========================================================
-    # CUSTOMER DATA
-    # ==========================================================
 
     if name == "get_customer_data":
 
@@ -298,17 +375,7 @@ async def execute_tool(
         result = await exchange.get_customer_data(
             chat_id=chat_id
         )
-
-        logger.info(
-            "get_customer_data result: {}",
-            result,
-        )
-
         return result
-
-    # ==========================================================
-    # CALCULATE EXCHANGE
-    # ==========================================================
 
     if name == "calculate_exchange":
 
@@ -316,17 +383,18 @@ async def execute_tool(
             items=arguments["items"],
             operation=arguments["operation"],
         )
+        return result
 
-        logger.info(
-            "calculate_exchange result: {}",
-            result,
+    if name == "calculate_cross_exchange":
+
+        result = await exchange.calculate_cross_exchange(
+            sell_currency=arguments["sell_currency"],
+            buy_currency=arguments["buy_currency"],
+            amount=float(arguments["amount"]),
+            raw_text=arguments.get("raw_text", ""),
         )
 
         return result
-
-    # ==========================================================
-    # CREATE ORDER
-    # ==========================================================
 
     if name == "create_order":
 
@@ -345,18 +413,10 @@ async def execute_tool(
             rate=arguments["rate"],
 
             operation=arguments["operation"],
-        )
-
-        logger.info(
-            "create_order result: {}",
-            result,
+            raw_text=arguments.get("raw_text", ""),
         )
 
         return result
-
-    # ==========================================================
-    # UNKNOWN TOOL
-    # ==========================================================
 
     raise ValueError(
         f"Неизвестная функция: {name}"

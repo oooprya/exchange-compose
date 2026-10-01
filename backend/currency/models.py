@@ -30,6 +30,14 @@ class Currency(models.Model):
                             max_length=30,
                             default='usd',
                             unique=True)
+    short_name = models.CharField('Короткое название',
+                                  max_length=10,
+                                  blank=True,
+                                  help_text="Например: $, €, грн")
+
+    is_cross_currency = models.BooleanField('Кросс-валюта',
+                                            default=False,
+                                            help_text="Использовать ли эту валюту для кросс-курсов")
     code = models.CharField(max_length=7)
     is_visible = models.BooleanField('Показывать на сайте', default=True)
     sort_order = models.PositiveIntegerField('Порядок сортировки', default=0)
@@ -136,6 +144,7 @@ class Orders(models.Model):
         ('completed', 'Выполнен'),
         ('new', 'Новый'),
         ('cancel', 'Сancel'),
+        ('noshow', 'Не пришел'),
     )
 
     status = models.CharField(choices=STATUS_CHOICES,
@@ -147,8 +156,15 @@ class Orders(models.Model):
     currency_name = models.CharField('Валюта', max_length=40, blank=True)
     buy_or_sell = models.CharField(max_length=8, blank=True)
     exchange_rate = models.DecimalField(
-        "Курс", decimal_places=2, max_digits=10, )
+        "Курс", decimal_places=4, max_digits=10, )
     order_sum = models.IntegerField("Сумма заказа", default=100)
+    client = models.ForeignKey(
+        'crm.ClientProfile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='orders',
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

@@ -1,7 +1,31 @@
 from django import forms
 from decimal import Decimal
+
+from .services.balance_service import BalanceService
 from .models import WholesaleOrder
 from currency.models import CartItem
+
+
+from django.core.exceptions import ValidationError
+
+
+class OrderAdminForm(forms.ModelForm):
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        order = self.instance
+        order.amount_currency = cleaned_data.get("amount_currency")
+        order.amount_base = cleaned_data.get("amount_base")
+        order.currency = cleaned_data.get("currency")
+        order.order_type = cleaned_data.get("order_type")
+
+        try:
+            BalanceService.validate_order(order)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+
+        return cleaned_data
 
 
 class WholesaleOrderForm(forms.ModelForm):

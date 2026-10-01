@@ -1,6 +1,5 @@
 
 from django.db import models
-from decimal import Decimal
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -18,6 +17,7 @@ class CashNode(models.Model):
 
     NODE_TYPE = [
         ("desk", "Касса"),
+        ("safe", "Сейф"),
         ("car", "Машина инкассации"),
     ]
 
@@ -31,20 +31,18 @@ class CashNode(models.Model):
 
     node_type = models.CharField(max_length=10, choices=NODE_TYPE)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(verbose_name="Активная",  default=True)
 
     class Meta:
         ordering = ['exchange_point']
-        verbose_name = "Оптовая касса"
-        verbose_name_plural = "Оптовые кассы"
+        verbose_name = "Кассу или машину"
+        verbose_name_plural = "Балансы"
 
     def __str__(self):
         return f"{self.name} — {self.exchange_point.address}"
 
 
 # Баланс по валютам
-
-
 class CashBalance(models.Model):
 
     """
@@ -91,10 +89,10 @@ class CashMovement(models.Model):
         ('out', 'Расход'),
         ('buy', '⬇ Покупка'),
         ('sell', '⬆ Продажа'),
-        # ('shift_open', 'Открытие смены'),
+        ("collect", "Инкассация"),
+        ("add", "Подкрепление"),
+        ("reversal", "Сторно"),
         # ('shift_close', 'Закрытие смены'),
-        # ("collection_out", "Инкассация вывоз"),
-        # ("collection_in", "Довоз в кассу"),
     )
 
     node = models.ForeignKey(
@@ -151,9 +149,10 @@ class StaffProfile(models.Model):
     telephone = models.CharField(
         max_length=16, verbose_name="Номер телефона", blank=True)
 
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role = models.CharField(
+        max_length=20, verbose_name="Роль", choices=ROLE_CHOICES)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(verbose_name="Активний", default=True)
 
     class Meta:
         verbose_name = "Сотрудник"
@@ -187,20 +186,30 @@ class Shift(models.Model):
     is_open = models.BooleanField(
         default=True, verbose_name="Открыть смену")
 
-    def clean(self):
-        if self.is_open:
-            exists = Shift.objects.filter(
-                staff=self.staff,
-                is_open=True
-            ).exclude(pk=self.pk).exists()
-
-            if exists:
-                raise ValidationError(
-                    "У этого сотрудника уже есть открытая смена."
-                )
+    # Новое поле для слепка баланса
+    morning_balances = models.JSONField(
+        verbose_name="Утренний баланс",
+        null=True,
+        blank=True
+    )
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+
+        if not self.pk and self.node:
+            balances = CashBalance.objects.filter(
+                node=self.node
+            ).select_related('currency')
+
+            self.morning_balances = {
+                b.currency.code: {
+                    "name": b.currency.name,
+                    # Decimal не сериализуется в JSON напрямую
+                    "amount": str(b.balance),
+                    "sort_order": b.currency.sort_order
+                } for b in balances
+            }
+
+        # self.full_clean()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -208,10 +217,9 @@ class Shift(models.Model):
         verbose_name_plural = "Смены"
         constraints = [
             models.UniqueConstraint(
-                fields=["staff"],
-                # Нельзя открыть две смены одновременно.
+                fields=["staff", "node"],
                 condition=models.Q(is_open=True),
-                name="unique_open_shift_per_staff"
+                name="unique_open_shift_per_staff_and_node"
             )
         ]
 
@@ -223,6 +231,8 @@ class WholesaleOrder(models.Model):
         ("sell", "Продажа"),
         ('in', 'Приход'),
         ('out', 'Расход'),
+        ("collect", "Инкассация"),
+        ("add", "Подкрепление"),
     )
 
     shift = models.ForeignKey(
@@ -269,7 +279,22 @@ class WholesaleOrder(models.Model):
         verbose_name="Еквівалент",
         blank=True, decimal_places=2)
 
+    profit = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        verbose_name="Прибуток",
+        null=True,
+        blank=True,
+        default=0
+    )
+
     comment = models.TextField(verbose_name="Комментарий", blank=True)
+
+    collection_items = models.JSONField(
+        verbose_name="Состав инкассации",
+        default=list,
+        blank=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
