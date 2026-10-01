@@ -103,11 +103,7 @@ docker-compose down -v
 
 ## 🔒 Production Deployment
 
-Полная инструкция в [DEPLOYMENT.md](DEPLOYMENT.md)
 
-```bash
-./deploy.sh 85.238.113.16 root
-```
 
 ## ⚠️ Перед Production
 
